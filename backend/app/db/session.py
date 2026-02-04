@@ -1,0 +1,63 @@
+"""Database session configuration.
+
+Ce module gère la configuration des sessions de base de données
+asynchrones avec SQLModel et asyncpg.
+"""
+
+from collections.abc import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.orm import sessionmaker
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.config import settings
+
+# Création du moteur asynchrone
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    echo=settings.DEBUG,
+    future=True,
+)
+
+# Session factory
+AsyncSessionLocal = sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autoflush=False,
+    autocommit=False,
+)
+
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Dépendance FastAPI pour obtenir une session DB.
+    
+    Usage:
+        @app.get("/items")
+        async def get_items(db: AsyncSession = Depends(get_db)):
+            ...
+    
+    Yields:
+        Une session de base de données asynchrone
+    """
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+
+async def init_db() -> None:
+    """Initialise la base de données (crée les tables).
+    
+    À utiliser au démarrage de l'application.
+    """
+    from app.models.base import BaseModel
+    
+    async with engine.begin() as conn:
+        # Crée toutes les tables
+        # Note: En production, utiliser Alembic pour les migrations
+        await conn.run_sync(BaseModel.metadata.create_all)
