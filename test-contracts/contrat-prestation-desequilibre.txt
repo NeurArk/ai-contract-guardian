@@ -1,0 +1,48 @@
+CONTRAT DE PRESTATION DE SERVICES - TEST 1
+
+ENTRE LES SOUSSIGNÉS :
+
+La société ABC SARL, au capital de 10 000 euros, immatriculée au RCS de Paris sous le numéro 123 456 789, dont le siège social est situé au 1 rue de la Paix, 75002 Paris, représentée par son gérant, Monsieur Martin, ci-après dénommée « Le Client »,
+
+ET
+
+La société XYZ Freelance, auto-entrepreneur, immatriculée au registre des auto-entrepreneurs, dont l'adresse est 10 rue des Lilas, 75011 Paris, représentée par Madame Dupont, ci-après dénommée « Le Prestataire »,
+
+IL A ÉTÉ CONVENU CE QUI SUIT :
+
+Article 1 - Objet
+Le Prestataire s'engage à fournir au Client des services de développement web selon les spécifications définies en annexe.
+
+Article 2 - Prix et modalités de paiement
+Le montant total de la prestation est fixé à 15 000 EUR H.T. 
+
+En cas de retard de paiement, le Client s'expose à une pénalité de retard de 15% du montant total par jour de retard, sans que cette pénalité puisse excéder 200% du montant initial. Le Client reconnaît expressément avoir pris connaissance de cette clause et l'accepte sans réserve.
+
+Article 3 - Propriété intellectuelle
+Tous les droits de propriété intellectuelle sur les livrables sont cédés au Client dès la signature du présent contrat, y compris les droits moraux, de manière irrévocable et pour le monde entier.
+
+Article 4 - Confidentialité
+Les parties s'engagent à maintenir confidentielles toutes les informations échangées pendant une durée de 20 ans après la fin du contrat.
+
+Article 5 - Clause de non-concurrence
+Le Prestataire s'engage à ne pas travailler pour aucun concurrent du Client pendant une durée de 5 ans après la fin de la prestation, sur l'ensemble du territoire français et européen.
+
+Article 6 - Résiliation
+Le Client peut résilier le contrat à tout moment sans préavis ni indemnité. Le Prestataire doit respecter un préavis de 6 mois en cas de résiliation.
+
+Article 7 - Responsabilité
+La responsabilité du Prestataire est limitée au montant de la première facture, soit 5 000 EUR maximum, quelle que soit la nature du préjudice subi.
+
+Article 8 - Force majeure
+En cas de force majeure, les parties seront déchargées de leurs obligations respectives sans indemnité.
+
+Article 9 - Droit applicable et juridiction compétente
+Le présent contrat est soumis au droit français. Tout litige relèvera de la compétence exclusive des tribunaux de Paris, même en cas de pluralité de défendeurs ou d'appel en garantie.
+
+Fait à Paris, le 15 janvier 2026
+
+En deux exemplaires
+
+Pour le Client :                                            Pour le Prestataire :
+(Signature précédée de la mention manuscrite              (Signature précédée de la mention manuscrite
+« Bon pour accord »)                                      « Bon pour accord »)

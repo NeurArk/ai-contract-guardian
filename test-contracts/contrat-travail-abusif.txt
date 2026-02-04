@@ -1,0 +1,53 @@
+CONTRAT DE TRAVAIL À DURÉE INDÉTERMINÉE (CDI) - TEST 4
+
+ENTRE :
+
+La société STARTUP TECH SAS, société par actions simplifiée au capital de 50 000 EUR, immatriculée au RCS de Paris sous le numéro 456 789 123, dont le siège social est situé au 25 rue du Commerce, 75015 Paris, représentée par son Président, Monsieur Petit, ci-après dénommée « l'Employeur »,
+
+ET
+
+Mademoiselle Marie DURAND, née le 15 mars 1995 à Lyon, demeurant au 12 rue de la République, 69001 Lyon, ci-après dénommée « le Salarié »,
+
+IL A ÉTÉ CONVENU CE QUI SUIT :
+
+Article 1 - Engagement
+Le Salarié est engagé par l'Employeur en qualité de Développeur Full Stack, à compter du 1er février 2026, sous contrat à durée indéterminée (CDI).
+
+Article 2 - Durée du travail
+Le Salarié effectuera une durée de travail de 48 heures par semaine, réparties sur 6 jours (du lundi au samedi inclus). Les heures effectuées au-delà de 35 heures seront considérées comme heures complémentaires et rémunérées selon les conditions prévues par la convention collective.
+
+Article 3 - Rémunération
+Le Salarié percevra une rémunération brute annuelle de 32 000 EUR, soit environ 2 666,67 EUR brut mensuel. Cette rémunération est fixe et ne pourra être révisée qu'à l'initiative de l'Employeur.
+
+Article 4 - Clause de non-concurrence
+Le Salarié s'interdit, pendant toute la durée du contrat et pendant une période de 3 ans après la rupture du contrat, de travailler pour toute entreprise exerçant une activité similaire ou concurrente, sur le territoire métropolitain et les DOM-TOM.
+
+Le Salarié reconnaît que cette clause est essentielle pour la protection des intérêts de l'Employeur. Aucune contrepartie financière spécifique n'est prévue pour cette clause.
+
+Article 5 - Clause de mobilité
+Le Salarié accepte d'emblée toute mutation sur l'ensemble du territoire français et à l'étranger, selon les besoins de l'entreprise. Le refus de mutation sera considéré comme une démission.
+
+Article 6 - Propriété intellectuelle
+Toutes les créations, inventions, développements réalisés par le Salarié pendant l'exécution de ses fonctions, même en dehors des heures de travail, seront la propriété exclusive de l'Employeur, sans limitation de durée ni de territoire. Le Salarié renonce expressément à ses droits moraux sur ces créations.
+
+Article 7 - Confidentialité
+Le Salarié s'engage à respecter la confidentialité la plus absolue sur tous les documents, informations et données dont il pourrait avoir connaissance dans l'exercice de ses fonctions. Cette obligation survit à la fin du contrat et reste applicable pendant toute la vie du Salarié.
+
+Article 8 - Essai
+Le présent contrat est conclu pour une période d'essai de 8 mois. Pendant cette période, le contrat pourra être rompu par chacune des parties sans préavis ni indemnité. La période d'essai pourra être renouvelée une fois pour une durée identique.
+
+Article 9 - Rupture du contrat
+En cas de rupture du contrat par le Salarié pendant les 2 premières années, celui-ci devra verser à l'Employeur une indemnité forfaitaire de 10 000 EUR à titre de dommages et intérêts.
+
+Article 10 - Formation
+Le Salarié pourra être amené à suivre des formations. Les frais de formation avancés par l'Employeur devront être remboursés par le Salarié en cas de démission dans les 5 ans suivant la formation, selon un barème dégressif.
+
+Article 11 - Droit applicable
+Le présent contrat est soumis au droit français. En cas de litige, les parties reconnaissent la compétence exclusive du Conseil des Prud'hommes de Paris.
+
+Fait à Paris, en deux exemplaires, le 15 janvier 2026
+
+L'Employeur                                    Le Salarié
+(Signature)                                     (Signature précédée de la mention manuscrite « Lu et approuvé »)
+
+Pour rappel : Le Salarié dispose d'un délai de rétractation de 48 heures pour renoncer à sa signature.

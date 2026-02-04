@@ -1,0 +1,52 @@
+CONTRAT DE LICENCE LOGICIEL - TEST 3
+
+ENTRE :
+
+La société SOFTWARE CORP, société américaine dont le siège social est situé à 1 Silicon Valley, CA 94000, USA, représentée par son CEO, ci-après dénommée « Le Concédant »,
+
+ET
+
+La société FRENCH CLIENT SAS, société française au capital de 100 000 EUR, immatriculée au RCS de Paris sous le numéro 987 654 321, dont le siège social est situé au 50 avenue des Champs-Élysées, 75008 Paris, représentée par son PDG, Monsieur Bernard, ci-après dénommée « Le Licencié »,
+
+IL A ÉTÉ CONVENU CE QUI SUIT :
+
+Article 1 - Objet de la licence
+Le Concédant concède au Licencié une licence non exclusive, non transférable et limitée d'utilisation du logiciel « SuperSoftware Pro » (ci-après « le Logiciel »), selon les termes et conditions définis aux présentes.
+
+Article 2 - Droit applicable et juridiction
+Le présent contrat est régi par les lois de l'État de Californie, USA, sans application des règles de conflits de lois. Tout litige relatif à l'interprétation ou l'exécution du présent contrat sera de la compétence exclusive des tribunaux de San Francisco, Californie.
+
+Article 3 - Limitation de responsabilité
+Dans toute la mesure permise par la loi applicable, la responsabilité totale du Concédant pour tout dommage découlant du présent contrat ne pourra excéder le montant des redevances payées par le Licencié au cours des 12 derniers mois, et ce quelle que soit la nature de l'action (contrat, responsabilité délictuelle ou autre).
+
+Article 4 - Exclusion de garanties
+LE LOGICIEL EST FOURNI « EN L'ÉTAT » ET SELON DISPONIBILITÉ, SANS AUCUNE GARANTIE EXPLICITE OU IMPLICITE, Y COMPRIS MAIS SANS LIMITATION LES GARANTIES DE QUALITÉ MARCHANDE, D'ADÉQUATION À UN USAGE PARTICULIER ET D'ABSENCE DE CONTREFAÇON.
+
+Article 5 - Maintenance et support
+Le Concédant s'engage à fournir un support technique par email dans un délai de 5 jours ouvrables. Aucune garantie de résolution des problèmes n'est donnée. Le support téléphonique fait l'objet d'une facturation supplémentaire de 500 USD/heure.
+
+Article 6 - Propriété intellectuelle
+Le Licencié reconnaît que le Concédant détient tous les droits de propriété intellectuelle sur le Logiciel. Cette licence ne constitue pas une cession de droits. Le Licencié s'interdit expressément de procéder à toute rétro-ingénierie, décompilation ou désassemblage du Logiciel.
+
+Article 7 - Durée et résiliation
+La présente licence est consentie pour une durée d'un (1) an, renouvelable tacitement par périodes d'un an, sauf dénonciation par l'une ou l'autre partie par lettre recommandée avec accusé de réception, trois (3) mois au moins avant l'expiration de la période en cours.
+
+Article 8 - Cession
+Le Licencié ne peut céder le présent contrat à un tiers sans l'accord écrit préalable du Concédant. Le Concédant peut céder le présent contrat à tout moment sans autorisation préalable du Licencié.
+
+Article 9 - Confidentialité
+Le Licencié s'engage à garder confidentielles toutes les informations techniques et commerciales du Concédant pendant une durée de 10 ans après la résiliation du contrat.
+
+Article 10 - Exportation
+Le Licencié s'engage à respecter l'ensemble des réglementations américaines en matière d'exportation (EAR, sanctions économiques, etc.).
+
+Article 11 - Force majeure
+La force majeure suspend les obligations du Concédant mais non celles du Licencié, notamment l'obligation de paiement des redevances.
+
+Fait à San Francisco, le 10 décembre 2025
+
+En deux exemplaires
+
+Pour le Concédant :                     Pour le Licencié :
+
+(Signature)                              (Signature)

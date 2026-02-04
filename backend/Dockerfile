@@ -13,6 +13,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
+    # Dépendances pour pdfplumber et processing PDF
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Installation des dépendances Python
@@ -21,6 +28,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copie du code
 COPY app/ ./app/
+COPY alembic/ ./alembic/
+COPY alembic.ini .
+
+# Création du dossier d'upload
+RUN mkdir -p /tmp/uploads
 
 # Exposition du port
 EXPOSE 8000

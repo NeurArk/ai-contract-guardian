@@ -55,9 +55,11 @@ async def init_db() -> None:
     
     À utiliser au démarrage de l'application.
     """
-    from app.models.base import BaseModel
+    from sqlmodel import SQLModel
+    # Import tous les modèles pour créer les tables
+    from app.models import User, Contract, Analysis
     
     async with engine.begin() as conn:
         # Crée toutes les tables
         # Note: En production, utiliser Alembic pour les migrations
-        await conn.run_sync(BaseModel.metadata.create_all)
+        await conn.run_sync(SQLModel.metadata.create_all)
