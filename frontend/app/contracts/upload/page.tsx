@@ -35,7 +35,7 @@ function UploadContent() {
   const [isDragging, setIsDragging] = useState(false);
   const { upload, progress, isUploading, error, reset } = useUpload();
 
-  const validateFile = (file: File): string | null => {
+  const validateFile = useCallback((file: File): string | null => {
     if (!ALLOWED_TYPES.includes(file.type)) {
       return 'Seuls les fichiers PDF sont acceptés';
     }
@@ -43,9 +43,9 @@ function UploadContent() {
       return 'Le fichier ne doit pas dépasser 10 Mo';
     }
     return null;
-  };
+  }, []);
 
-  const handleFile = (file: File) => {
+  const handleFile = useCallback((file: File) => {
     const error = validateFile(file);
     if (error) {
       toast.error(error);
@@ -53,7 +53,7 @@ function UploadContent() {
     }
     setFile(file);
     reset();
-  };
+  }, [reset, validateFile]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -73,7 +73,7 @@ function UploadContent() {
     if (droppedFile) {
       handleFile(droppedFile);
     }
-  }, []);
+  }, [handleFile]);
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];

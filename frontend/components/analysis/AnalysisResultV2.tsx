@@ -12,8 +12,8 @@ import {
   Share2,
   Printer,
 } from "lucide-react";
-import { ConfidenceScore, GlobalConfidenceCard } from "./ConfidenceScore";
-import { SourcesList, SourcesMiniList } from "./SourcesList";
+import { GlobalConfidenceCard } from "./ConfidenceScore";
+import { SourcesList } from "./SourcesList";
 import { LegalDisclaimer } from "./LegalDisclaimer";
 
 interface ArticleApplicable {
@@ -74,6 +74,15 @@ interface AnalysisResultV2Props {
   onDownload?: () => void;
   onShare?: () => void;
 }
+
+type ConfidenceLevel = "high" | "medium" | "low" | "insufficient";
+
+const confidenceLevelMap: Record<AnalysisResult["niveau_confiance"], ConfidenceLevel> = {
+  élevé: "high",
+  moyen: "medium",
+  faible: "low",
+  insuffisant: "insufficient",
+};
 
 function ClauseCard({ analyse }: { analyse: AnalyseClause }) {
   const levelColors = {
@@ -197,7 +206,7 @@ function ClauseCard({ analyse }: { analyse: AnalyseClause }) {
                     rel="noopener noreferrer"
                     className="text-xs text-purple-600 hover:underline mt-1 inline-block"
                   >
-                    Voir l'arrêt
+                    Voir l&apos;arrêt
                   </a>
                 )}
               </div>
@@ -229,7 +238,7 @@ function ClauseCard({ analyse }: { analyse: AnalyseClause }) {
       {/* Incertitudes */}
       {analyse.zones_incertitudes.length > 0 && (
         <div className="mb-4">
-          <h4 className="font-medium text-amber-700 mb-2">Zones d'incertitude</h4>
+          <h4 className="font-medium text-amber-700 mb-2">Zones d&apos;incertitude</h4>
           <ul className="space-y-1">
             {analyse.zones_incertitudes.map((zone, idx) => (
               <li
@@ -335,7 +344,7 @@ export function AnalysisResultV2({
         <div className="mb-8">
           <GlobalConfidenceCard
             score={result.score_confiance_global}
-            level={result.niveau_confiance}
+            level={confidenceLevelMap[result.niveau_confiance]}
             clauseCount={result.analyses.length}
             officialSources={
               result.sources.filter((s) => s.is_official).length

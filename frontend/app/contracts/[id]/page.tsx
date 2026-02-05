@@ -35,7 +35,7 @@ function ContractDetailContent({ contractId }: { contractId: string }) {
   const { getContract, getContractAnalysis, getContractStatus } = useContracts();
   
   const { data: contract, isLoading: isLoadingContract } = getContract(contractId);
-  const { data: analysis, isLoading: isLoadingAnalysis } = getContractAnalysis(contractId);
+  const { data: analysis } = getContractAnalysis(contractId);
   const { data: status } = getContractStatus(
     contractId,
     contract?.status === 'processing' ? 5000 : false

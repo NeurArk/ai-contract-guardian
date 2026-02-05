@@ -27,8 +27,11 @@ export function useUpload() {
       });
 
       try {
-        const result = await uploadContract(file, (progress) => {
-          setUploadState((prev) => ({ ...prev, progress }));
+        const result = await uploadContract({
+          file,
+          onProgress: (progress: number) => {
+            setUploadState((prev) => ({ ...prev, progress }));
+          },
         });
 
         setUploadState({

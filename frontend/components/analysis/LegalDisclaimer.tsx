@@ -62,7 +62,7 @@ export function LegalDisclaimer({
             <button
               onClick={handleDismiss}
               className="flex-shrink-0 p-1 text-amber-600 hover:text-amber-800 hover:bg-amber-100 rounded transition-colors"
-              aria-label="Fermer l'avertissement"
+              aria-label="Fermer l&apos;avertissement"
             >
               <X className="w-5 h-5" />
             </button>
@@ -155,7 +155,7 @@ export function LegalDisclaimerWithConsent({
       >
         <Shield className="w-5 h-5 text-green-600" />
         <span className="text-sm text-green-700">
-          Vous avez pris connaissance de l'avertissement légal
+          Vous avez pris connaissance de l&apos;avertissement légal
         </span>
       </div>
     );
@@ -181,7 +181,7 @@ export function LegalDisclaimerWithConsent({
               onChange={handleAccept}
             />
             <span className="text-sm text-amber-800 group-hover:text-amber-900">
-              J'ai lu et je comprends que cette analyse est générée par
+              J&apos;ai lu et je comprends que cette analyse est générée par
               intelligence artificielle à titre indicatif uniquement et ne
               remplace pas un avis juridique professionnel.
             </span>

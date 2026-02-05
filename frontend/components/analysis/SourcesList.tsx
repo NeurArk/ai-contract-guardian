@@ -174,7 +174,7 @@ export function SourcesList({
         <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
         <p className="text-sm text-gray-600">Aucune source disponible</p>
         <p className="text-xs text-gray-500 mt-1">
-          Les sources seront ajoutées lors de l'analyse
+          Les sources seront ajoutées lors de l&apos;analyse
         </p>
       </div>
     );
