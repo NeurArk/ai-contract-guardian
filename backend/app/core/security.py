@@ -16,7 +16,7 @@ from passlib.context import CryptContext
 from app.config import settings
 
 # Configuration du hashing de mots de passe
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 # Schéma de sécurité pour JWT
 security = HTTPBearer(auto_error=False)
@@ -154,7 +154,7 @@ async def get_current_user_id(
     """
     if not credentials:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Authentification requise",
             headers={"WWW-Authenticate": "Bearer"},
         )

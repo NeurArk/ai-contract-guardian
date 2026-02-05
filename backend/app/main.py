@@ -16,15 +16,6 @@ async def lifespan(app: FastAPI):
     redis_client = await get_redis_client()
     app.state.redis = redis_client
 
-    # Setup security middleware with Redis for rate limiting
-    setup_security_middleware(
-        app,
-        cors_origins=settings.cors_origins_list,
-        redis_client=redis_client,
-        enable_gzip=True,
-        allow_iframes=False,
-    )
-
     yield
 
     # Shutdown
@@ -40,6 +31,15 @@ app = FastAPI(
     redoc_url="/redoc" if settings.DEBUG else None,
     openapi_url="/openapi.json" if settings.DEBUG else None,
     lifespan=lifespan,
+)
+
+# Setup security middleware (Redis sera récupéré depuis app.state si dispo)
+setup_security_middleware(
+    app,
+    cors_origins=settings.cors_origins_list,
+    redis_client=None,
+    enable_gzip=True,
+    allow_iframes=False,
 )
 
 # Inclusion des routers

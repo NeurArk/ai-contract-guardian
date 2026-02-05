@@ -62,6 +62,10 @@ async def setup_database() -> AsyncGenerator[None, None]:
 @pytest_asyncio.fixture
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
     """Create a fresh database session for each test."""
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.drop_all)
+        await conn.run_sync(SQLModel.metadata.create_all)
+
     async with TestingSessionLocal() as session:
         yield session
         # Rollback any changes

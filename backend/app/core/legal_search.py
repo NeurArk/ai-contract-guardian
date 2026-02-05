@@ -16,7 +16,10 @@ SEARCH_TEMPLATES: dict[str, list[str]] = {
     "force_majeure": ["site:legifrance.gouv.fr force majeure"],
     "responsabilité": ["site:legifrance.gouv.fr limitation responsabilité"],
     "propriété_intellectuelle": ["site:legifrance.gouv.fr propriété intellectuelle"],
-    "conformité_rgpd": ["site:legifrance.gouv.fr rgpd", "site:cnil.fr base légale traitement données"],
+    "conformité_rgpd": [
+        "site:legifrance.gouv.fr rgpd",
+        "site:legifrance.gouv.fr base légale traitement données",
+    ],
     "droit_retractation": ["site:legifrance.gouv.fr droit de rétractation"],
     "non_concurrence": ["site:legifrance.gouv.fr clause de non-concurrence"],
 }

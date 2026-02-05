@@ -29,6 +29,6 @@ async def health_check() -> HealthResponse:
         Status de l'API et version
     """
     return HealthResponse(
-        status="ok",
+        status="healthy",
         version=settings.VERSION,
     )

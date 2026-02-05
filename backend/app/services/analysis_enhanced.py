@@ -14,7 +14,7 @@ from typing import Any
 from anthropic import AsyncAnthropic
 
 from app.config import settings
-from app.core.legal_search import search_legal_sources, detect_clause_type
+from app.core.legal_search import search_legal_sources, detect_clause_type, is_official_source
 from app.core.confidence import calculate_confidence, calculate_clause_confidence
 from app.prompts.legal_analysis import (
     format_prompt_with_context,
@@ -119,28 +119,53 @@ async def analyze_contract_enhanced(
         # ==========================================================================
         # ÉTAPE 4: Calcul du score de confiance
         # ==========================================================================
+        sources = search_results.get("sources", [])
+        sources_count = len(sources)
+        official_count = search_results.get(
+            "official_count",
+            sum(1 for source in sources if is_official_source(source.get("url", ""))),
+        )
+        official_ratio = (official_count / sources_count) if sources_count else 0.0
+        has_citations = bool(
+            analysis_data.get("articles_applicables")
+            or analysis_data.get("citations")
+            or (analysis_data.get("analyses") and any(
+                clause.get("articles_applicables") for clause in analysis_data["analyses"]
+            ))
+        )
+        consistency_score = float(search_results.get("confidence_score", 0.0))
+
         confidence_result = calculate_confidence(
-            search_results=search_results,
-            llm_response=analysis_data,
+            has_citations=has_citations,
+            sources_count=sources_count,
+            official_sources_ratio=official_ratio,
+            consistency_score=consistency_score,
+            search_results=sources,
         )
 
         # Met à jour le score dans les données d'analyse
-        analysis_data["score_confiance_global"] = confidence_result.score
-        analysis_data["niveau_confiance"] = confidence_result.level
-        analysis_data["recommandation_verification"] = confidence_result.score < 70
+        analysis_data["score_confiance_global"] = confidence_result["score"]
+        analysis_data["niveau_confiance"] = confidence_result["level"]
+        analysis_data["recommandation_verification"] = confidence_result["score"] < 70
 
         # Ajoute les détails du scoring
         analysis_data["_scoring_details"] = {
-            "factors": confidence_result.factors,
-            "recommendation": confidence_result.recommendation,
+            "factors": confidence_result["factors"],
+            "recommendation": confidence_result.get("recommendation"),
         }
 
         # Calcule le score pour chaque clause
         if "analyses" in analysis_data:
             for clause_analysis in analysis_data["analyses"]:
+                clause_text = (
+                    clause_analysis.get("analyse_juridique")
+                    or clause_analysis.get("analyse")
+                    or ""
+                )
                 clause_confidence = calculate_clause_confidence(
-                    clause_analysis=clause_analysis,
-                    sources=search_results.get("sources", []),
+                    citation_found=bool(clause_analysis.get("articles_applicables")),
+                    source_official=official_ratio > 0,
+                    text_length=len(clause_text),
                 )
                 clause_analysis["score_confiance_clause"] = clause_confidence["score"]
                 clause_analysis["niveau_confiance_clause"] = clause_confidence["level"]
@@ -159,7 +184,9 @@ async def analyze_contract_enhanced(
         if not analysis_data.get("disclaimer"):
             analysis_data["disclaimer"] = get_disclaimer()
 
-        logger.info(f"Analyse terminée - Score confiance: {confidence_result.score}")
+        logger.info(
+            f"Analyse terminée - Score confiance: {confidence_result['score']}"
+        )
 
         return analysis_data
 
