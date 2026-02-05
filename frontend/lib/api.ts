@@ -1,5 +1,12 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
-import { Contract, Analysis, User, LoginCredentials, RegisterCredentials } from '@/types';
+import {
+  Contract,
+  Analysis,
+  AnalysisStatusResponse,
+  User,
+  LoginCredentials,
+  RegisterCredentials,
+} from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -88,7 +95,7 @@ export const contractsApi = {
     return response.data;
   },
 
-  getContractStatus: async (id: string) => {
+  getContractStatus: async (id: string): Promise<AnalysisStatusResponse> => {
     const response = await apiClient.get(`/api/v1/contracts/${id}/status`);
     return response.data;
   },

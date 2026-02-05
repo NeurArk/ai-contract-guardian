@@ -38,6 +38,17 @@ export interface Analysis {
   created_at: string;
 }
 
+export interface AnalysisStatusResponse {
+  contract_id: string;
+  analysis_id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  score_equity?: number;
+  score_clarity?: number;
+  error_message?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface LoginCredentials {
   email: string;
   password: string;

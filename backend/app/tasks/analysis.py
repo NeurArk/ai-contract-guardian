@@ -10,7 +10,11 @@ from uuid import UUID
 from celery import Task
 from celery.exceptions import MaxRetriesExceededError
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlmodel import col
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.config import settings
 
 from app.celery_app import celery_app
 from app.models import Contract, Analysis, AnalysisStatus, ContractStatus
@@ -49,30 +53,54 @@ def analyze_contract(self: Task, contract_id: str) -> dict:
     return asyncio.run(_analyze_contract_async(self, contract_id))
 
 
-async def _analyze_contract_async(task: Task, contract_id: str) -> dict:
+async def _analyze_contract_async(task: Task, contract_id: str) -> dict[str, Any]:
     """Version asynchrone de l'analyse de contrat."""
-    from app.db.session import AsyncSessionLocal
     from app.services.claude_service import analyze_contract_with_claude
 
-    async with AsyncSessionLocal() as db:
+    try:
+        contract_uuid = UUID(contract_id)
+    except ValueError:
+        return {
+            "contract_id": contract_id,
+            "status": "failed",
+            "error": "Identifiant de contrat invalide",
+        }
+
+    engine = create_async_engine(
+        settings.DATABASE_URL,
+        echo=settings.DEBUG,
+        future=True,
+    )
+    session_factory = async_sessionmaker(
+        bind=engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autoflush=False,
+    )
+
+    async with session_factory() as db:
         try:
             # Récupère le contrat
             result = await db.execute(
-                select(Contract).where(col(Contract.id) == UUID(contract_id))
+                select(Contract).where(col(Contract.id) == contract_uuid)
             )
             contract = result.scalar_one_or_none()
 
             if not contract:
-                raise ValueError(f"Contrat {contract_id} non trouvé")
+                return {
+                    "contract_id": contract_id,
+                    "status": "failed",
+                    "error": f"Contrat {contract_id} non trouvé",
+                }
 
             # Récupère ou crée l'analyse
             result = await db.execute(
-                select(Analysis).where(col(Analysis.contract_id) == UUID(contract_id))
+                select(Analysis).where(col(Analysis.contract_id) == contract_uuid)
             )
             analysis = result.scalar_one_or_none()
 
             if not analysis:
-                analysis = Analysis(contract_id=UUID(contract_id))
+                analysis = Analysis(contract_id=contract_uuid)
                 db.add(analysis)
 
             # Met à jour le statut
@@ -117,7 +145,7 @@ async def _analyze_contract_async(task: Task, contract_id: str) -> dict:
             # Met à jour le statut d'erreur
             try:
                 result = await db.execute(
-                    select(Analysis).where(col(Analysis.contract_id) == UUID(contract_id))
+                    select(Analysis).where(col(Analysis.contract_id) == contract_uuid)
                 )
                 analysis = result.scalar_one_or_none()
                 if analysis:
@@ -125,7 +153,7 @@ async def _analyze_contract_async(task: Task, contract_id: str) -> dict:
                     analysis.error_message = str(exc)
 
                 result = await db.execute(
-                    select(Contract).where(col(Contract.id) == UUID(contract_id))
+                    select(Contract).where(col(Contract.id) == contract_uuid)
                 )
                 contract = result.scalar_one_or_none()
                 if contract:
@@ -146,6 +174,8 @@ async def _analyze_contract_async(task: Task, contract_id: str) -> dict:
                 }
 
             raise
+        finally:
+            await engine.dispose()
 
 
 def _generate_mock_analysis(contract_text: str) -> dict:

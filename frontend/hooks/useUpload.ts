@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useContracts } from './useContracts';
+import { getApiErrorMessage } from '@/lib/errors';
 
 interface UploadState {
   progress: number;
@@ -42,7 +43,8 @@ export function useUpload() {
 
         return result;
       } catch (error) {
-        const err = error instanceof Error ? error : new Error('Upload failed');
+        const message = getApiErrorMessage(error, "Erreur lors de l'upload du contrat.");
+        const err = new Error(message);
         setUploadState({
           progress: 0,
           isUploading: false,

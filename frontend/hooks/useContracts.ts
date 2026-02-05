@@ -1,8 +1,9 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { UseQueryOptions } from '@tanstack/react-query';
 import { contractsApi } from '@/lib/api';
-import { Contract } from '@/types';
+import { AnalysisStatusResponse, Contract } from '@/types';
 
 const CONTRACTS_KEY = 'contracts';
 
@@ -34,15 +35,18 @@ export function useContracts() {
     });
   };
 
-  const getContractAnalysis = (id: string) => {
+  const getContractAnalysis = (id: string, enabled = true) => {
     return useQuery({
       queryKey: [CONTRACTS_KEY, id, 'analysis'],
       queryFn: () => contractsApi.getContractAnalysis(id),
-      enabled: !!id,
+      enabled: !!id && enabled,
     });
   };
 
-  const getContractStatus = (id: string, refetchInterval: number | false = false) => {
+  const getContractStatus = (
+    id: string,
+    refetchInterval: UseQueryOptions<AnalysisStatusResponse>['refetchInterval'] = false
+  ) => {
     return useQuery({
       queryKey: [CONTRACTS_KEY, id, 'status'],
       queryFn: () => contractsApi.getContractStatus(id),

@@ -14,7 +14,10 @@ import { Upload, File, X, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-rea
 import { toast } from 'sonner';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_TYPES = ['application/pdf'];
+const ALLOWED_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
 
 export default function UploadPage() {
   return (
@@ -37,7 +40,7 @@ function UploadContent() {
 
   const validateFile = useCallback((file: File): string | null => {
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return 'Seuls les fichiers PDF sont acceptés';
+      return 'Seuls les fichiers PDF ou DOCX sont acceptés';
     }
     if (file.size > MAX_FILE_SIZE) {
       return 'Le fichier ne doit pas dépasser 10 Mo';
@@ -113,7 +116,7 @@ function UploadContent() {
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Analyser un nouveau contrat</h1>
         <p className="text-slate-600 mt-1">
-          Téléchargez votre contrat PDF pour une analyse complète par notre IA
+          Téléchargez votre contrat PDF ou DOCX pour une analyse complète par notre IA
         </p>
       </div>
 
@@ -122,7 +125,7 @@ function UploadContent() {
         <CardHeader>
           <CardTitle>Upload de fichier</CardTitle>
           <CardDescription>
-            Formats acceptés : PDF (max 10 Mo)
+            Formats acceptés : PDF ou DOCX (max 10 Mo)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -147,7 +150,7 @@ function UploadContent() {
               <label>
                 <input
                   type="file"
-                  accept=".pdf"
+                  accept=".pdf,.docx"
                   onChange={handleFileInput}
                   className="hidden"
                 />

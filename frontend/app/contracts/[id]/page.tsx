@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
@@ -13,6 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
 import { useContracts } from '@/hooks/useContracts';
+import { getApiErrorMessage } from '@/lib/errors';
 import { FileText, ArrowLeft, AlertTriangle, CheckCircle, XCircle, Download, Loader2 } from 'lucide-react';
 
 export default function ContractDetailPage() {
@@ -33,13 +36,57 @@ export default function ContractDetailPage() {
 
 function ContractDetailContent({ contractId }: { contractId: string }) {
   const { getContract, getContractAnalysis, getContractStatus } = useContracts();
-  
-  const { data: contract, isLoading: isLoadingContract } = getContract(contractId);
-  const { data: analysis } = getContractAnalysis(contractId);
-  const { data: status } = getContractStatus(
-    contractId,
-    contract?.status === 'processing' ? 5000 : false
-  );
+
+  const {
+    data: contract,
+    isLoading: isLoadingContract,
+    error: contractError,
+  } = getContract(contractId);
+
+  const { data: status, error: statusError } = getContractStatus(contractId, (query) => {
+    const statusValue = query.state.data?.status ?? contract?.status;
+    if (!statusValue) {
+      return 5000;
+    }
+    return statusValue === 'pending' || statusValue === 'processing' ? 5000 : false;
+  });
+
+  const resolvedStatus = status?.status || contract?.status;
+  const shouldFetchAnalysis = resolvedStatus === 'completed';
+
+  const {
+    data: analysis,
+    isLoading: isLoadingAnalysis,
+    error: analysisError,
+  } = getContractAnalysis(contractId, shouldFetchAnalysis);
+
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const isAnalyzing = resolvedStatus === 'pending' || resolvedStatus === 'processing';
+
+  useEffect(() => {
+    if (resolvedStatus === 'completed') {
+      setAnalysisProgress(100);
+      return;
+    }
+
+    if (resolvedStatus === 'failed' || !isAnalyzing) {
+      setAnalysisProgress(0);
+      return;
+    }
+
+    const target = resolvedStatus === 'processing' ? 85 : 45;
+    // Progression estimée : on avance par paliers tant que l'analyse est en cours.
+    setAnalysisProgress((prev) => (prev === 0 ? 10 : prev));
+    const interval = setInterval(() => {
+      setAnalysisProgress((prev) => {
+        if (prev >= target) return prev;
+        const increment = Math.floor(Math.random() * 6) + 2;
+        return Math.min(prev + increment, target);
+      });
+    }, 1200);
+
+    return () => clearInterval(interval);
+  }, [resolvedStatus, isAnalyzing]);
 
   if (isLoadingContract) {
     return (
@@ -47,6 +94,17 @@ function ContractDetailContent({ contractId }: { contractId: string }) {
         <Skeleton className="h-10 w-48" />
         <Skeleton className="h-64 w-full" />
       </div>
+    );
+  }
+
+  if (contractError) {
+    const message = getApiErrorMessage(contractError, 'Impossible de charger ce contrat.');
+    return (
+      <Alert variant="destructive">
+        <XCircle className="h-4 w-4" />
+        <AlertTitle>Erreur de chargement</AlertTitle>
+        <AlertDescription>{message}</AlertDescription>
+      </Alert>
     );
   }
 
@@ -62,7 +120,13 @@ function ContractDetailContent({ contractId }: { contractId: string }) {
     );
   }
 
-  const isAnalyzing = contract.status === 'processing' || status?.status === 'processing';
+  const displayStatus = resolvedStatus || contract.status;
+  const statusErrorMessage = statusError
+    ? getApiErrorMessage(statusError, "Impossible de récupérer le statut de l'analyse.")
+    : null;
+  const analysisErrorMessage = analysisError
+    ? getApiErrorMessage(analysisError, "Impossible de récupérer l'analyse du contrat.")
+    : null;
 
   return (
     <div className="space-y-6">
@@ -83,7 +147,7 @@ function ContractDetailContent({ contractId }: { contractId: string }) {
             Téléchargé le {new Date(contract.created_at).toLocaleDateString('fr-FR')}
           </p>
         </div>
-        <StatusBadge status={contract.status} />
+        <StatusBadge status={displayStatus} />
       </div>
 
       {/* Analyzing State */}
@@ -92,14 +156,44 @@ function ContractDetailContent({ contractId }: { contractId: string }) {
           <Loader2 className="h-4 w-4 animate-spin" />
           <AlertTitle>Analyse en cours</AlertTitle>
           <AlertDescription>
-            Notre IA est en train d&apos;analyser votre contrat. Cela peut prendre quelques minutes.
-            La page se mettra à jour automatiquement.
+            <p>
+              Notre IA est en train d&apos;analyser votre contrat. Cela peut prendre quelques minutes.
+              La page se mettra à jour automatiquement.
+            </p>
+            <div className="mt-3 space-y-1">
+              <Progress value={analysisProgress} className="h-2" />
+              <p className="text-xs text-slate-500">Progression estimée : {analysisProgress}%</p>
+            </div>
           </AlertDescription>
         </Alert>
       )}
 
+      {statusErrorMessage && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Statut indisponible</AlertTitle>
+          <AlertDescription>{statusErrorMessage}</AlertDescription>
+        </Alert>
+      )}
+
+      {shouldFetchAnalysis && isLoadingAnalysis && (
+        <Alert>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <AlertTitle>Chargement de l&apos;analyse</AlertTitle>
+          <AlertDescription>Nous récupérons les résultats, cela ne prendra qu&apos;un instant.</AlertDescription>
+        </Alert>
+      )}
+
+      {analysisErrorMessage && (
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertTitle>Analyse indisponible</AlertTitle>
+          <AlertDescription>{analysisErrorMessage}</AlertDescription>
+        </Alert>
+      )}
+
       {/* Analysis Results */}
-      {contract.status === 'completed' && analysis && (
+      {displayStatus === 'completed' && analysis && !analysisErrorMessage && (
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="grid w-full sm:w-auto sm:inline-grid grid-cols-2 sm:grid-cols-4">
             <TabsTrigger value="overview">Vue d&apos;ensemble</TabsTrigger>
@@ -213,13 +307,13 @@ function ContractDetailContent({ contractId }: { contractId: string }) {
           <TabsContent value="document">
             <Card>
               <CardHeader>
-                <CardTitle>Document PDF</CardTitle>
+                <CardTitle>Document</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="aspect-[16/9] bg-slate-100 rounded-lg flex items-center justify-center">
                   <div className="text-center">
                     <FileText className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500 mb-4">Visualisation du PDF</p>
+                    <p className="text-slate-500 mb-4">Visualisation du document</p>
                     <Button variant="outline" className="gap-2">
                       <Download className="h-4 w-4" />
                       Télécharger le fichier
@@ -232,12 +326,14 @@ function ContractDetailContent({ contractId }: { contractId: string }) {
         </Tabs>
       )}
 
-      {contract.status === 'failed' && (
+      {displayStatus === 'failed' && (
         <Alert variant="destructive">
           <XCircle className="h-4 w-4" />
           <AlertTitle>Analyse échouée</AlertTitle>
           <AlertDescription>
-            L&apos;analyse de ce contrat a échoué. Veuillez réessayer ou contacter le support si le problème persiste.
+            {status?.error_message
+              ? `${status.error_message} Veuillez réessayer ou contacter le support si le problème persiste.`
+              : "L'analyse de ce contrat a échoué. Veuillez réessayer ou contacter le support si le problème persiste."}
           </AlertDescription>
         </Alert>
       )}
@@ -246,7 +342,7 @@ function ContractDetailContent({ contractId }: { contractId: string }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const variants: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
+  const variants: Record<string, { label: string; className: string; icon: ReactNode }> = {
     pending: {
       label: 'En attente',
       className: 'bg-yellow-100 text-yellow-800',
