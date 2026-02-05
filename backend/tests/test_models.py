@@ -7,7 +7,7 @@ from app.models.contract import Contract, ContractStatus
 from app.models.analysis import Analysis, AnalysisStatus
 
 
-def test_user_model():
+def test_user_model() -> None:
     """Test la création d'un utilisateur."""
     user = User(
         id=uuid4(),
@@ -23,7 +23,7 @@ def test_user_model():
     assert user.is_active is True
 
 
-def test_contract_model():
+def test_contract_model() -> None:
     """Test la création d'un contrat."""
     contract = Contract(
         id=uuid4(),
@@ -40,7 +40,7 @@ def test_contract_model():
     assert contract.status == ContractStatus.PENDING
 
 
-def test_analysis_model():
+def test_analysis_model() -> None:
     """Test la création d'une analyse."""
     analysis = Analysis(
         id=uuid4(),

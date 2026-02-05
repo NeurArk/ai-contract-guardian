@@ -6,18 +6,18 @@ Ce module expose les nouveaux endpoints d'analyse avec:
 - Disclaimer obligatoire
 """
 
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
+from sqlmodel import col
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.api.deps import get_current_user_id
+from app.core.security import get_current_user_id
 from app.core.legal_search import search_legal_sources
-from app.core.confidence import calculate_confidence
 from app.db.session import get_db
-from app.models import Contract, Analysis, AnalysisCreate
+from app.models import Contract, Analysis
 from app.services.analysis_enhanced import analyze_contract_enhanced, verify_analysis_quality
 from app.prompts.legal_analysis import get_disclaimer
 
@@ -53,8 +53,8 @@ async def analyze_contract_v2(
     # Récupère le contrat
     result = await db.execute(
         select(Contract).where(
-            Contract.id == contract_id,
-            Contract.user_id == current_user_id,
+            col(Contract.id) == contract_id,
+            col(Contract.user_id) == current_user_id,
         )
     )
     contract = result.scalar_one_or_none()
@@ -151,8 +151,8 @@ async def get_analysis_v2(
     # Vérifie que le contrat appartient à l'utilisateur
     result = await db.execute(
         select(Contract).where(
-            Contract.id == contract_id,
-            Contract.user_id == current_user_id,
+            col(Contract.id) == contract_id,
+            col(Contract.user_id) == current_user_id,
         )
     )
     contract = result.scalar_one_or_none()
@@ -164,7 +164,7 @@ async def get_analysis_v2(
         )
 
     # Récupère l'analyse
-    result = await db.execute(select(Analysis).where(Analysis.contract_id == contract_id))
+    result = await db.execute(select(Analysis).where(col(Analysis.contract_id) == contract_id))
     analysis = result.scalar_one_or_none()
 
     if not analysis:
@@ -213,7 +213,7 @@ async def search_legal_sources_endpoint(
             keywords=keywords or [],
             max_results=10,
         )
-        return results
+        return cast(dict[str, Any], results)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

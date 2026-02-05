@@ -38,13 +38,10 @@ apiClient.interceptors.response.use(
 // Auth API
 export const authApi = {
   login: async (credentials: LoginCredentials) => {
-    const formData = new URLSearchParams();
-    formData.append('username', credentials.email);
-    formData.append('password', credentials.password);
-    
-    const response = await apiClient.post('/api/v1/auth/login', formData, {
+    // Backend attend un JSON {email, password} (pas un OAuth2 form)
+    const response = await apiClient.post('/api/v1/auth/login', credentials, {
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
     });
     return response.data;

@@ -4,7 +4,16 @@ Ce module fournit des fonctions pour rechercher et valider
 des sources juridiques officielles françaises.
 """
 
-from typing import Any
+from typing import Any, TypedDict
+
+
+class OfficialSourceInfo(TypedDict):
+    """Structure d'une source officielle."""
+
+    name: str
+    type: str
+    priority: int
+
 
 # Templates de recherche pour différents types de clauses
 SEARCH_TEMPLATES: dict[str, list[str]] = {
@@ -25,7 +34,7 @@ SEARCH_TEMPLATES: dict[str, list[str]] = {
 }
 
 # Sources officielles reconnues
-OFFICIAL_SOURCES: dict[str, dict[str, Any]] = {
+OFFICIAL_SOURCES: dict[str, OfficialSourceInfo] = {
     "legifrance.gouv.fr": {
         "name": "Légifrance",
         "type": "legislation",
@@ -47,6 +56,25 @@ OFFICIAL_SOURCES: dict[str, dict[str, Any]] = {
         "priority": 2,
     },
 }
+
+
+class LegalSource(TypedDict, total=False):
+    """Structure d'une source juridique retournée par la recherche."""
+
+    title: str
+    url: str
+    snippet: str
+    score: float
+
+
+class LegalSearchResults(TypedDict):
+    """Structure des résultats de recherche juridique."""
+
+    sources: list[LegalSource]
+    confidence_score: float
+    official_count: int
+    search_queries: list[str]
+
 
 
 def detect_clause_type(text: str) -> list[str]:
@@ -123,7 +151,7 @@ def get_source_type(url: str) -> str:
     """
     for domain, info in OFFICIAL_SOURCES.items():
         if domain in url.lower():
-            return info.get("type", "inconnu")
+            return info["type"]
     return "doctrine"
 
 
@@ -210,7 +238,7 @@ async def search_legal_sources(
     max_results: int = 5,
     clause_type: str | None = None,
     keywords: list[str] | None = None,
-) -> dict[str, Any]:
+) -> LegalSearchResults:
     """Recherche des sources juridiques pour une requête.
 
     Args:
@@ -222,7 +250,7 @@ async def search_legal_sources(
     Returns:
         Dictionnaire avec sources et métadonnées
     """
-    search_queries = []
+    search_queries: list[str] = []
 
     # Construit les requêtes de recherche
     if clause_type and clause_type in SEARCH_TEMPLATES:
@@ -238,7 +266,7 @@ async def search_legal_sources(
 
     # Cette fonction devrait intégrer une vraie recherche web
     # Pour l'instant, on retourne des résultats simulés
-    sources = [
+    sources: list[LegalSource] = [
         {
             "title": f"Résultat simulé pour: {search_queries[0] if search_queries else query}",
             "url": "https://www.legifrance.gouv.fr",
@@ -247,7 +275,9 @@ async def search_legal_sources(
         }
     ]
 
-    official_count = sum(1 for s in sources if is_official_source(s.get("url", "")))
+    official_count = sum(
+        is_official_source(str(source.get("url", ""))) for source in sources
+    )
 
     return {
         "sources": sources[:max_results],

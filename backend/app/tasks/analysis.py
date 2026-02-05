@@ -4,11 +4,13 @@ Ce module contient les tâches Celery pour l'analyse des contrats.
 """
 
 import asyncio
+from typing import Any
 from uuid import UUID
 
 from celery import Task
 from celery.exceptions import MaxRetriesExceededError
 from sqlalchemy import select
+from sqlmodel import col
 
 from app.celery_app import celery_app
 from app.models import Contract, Analysis, AnalysisStatus, ContractStatus
@@ -18,9 +20,9 @@ from app.services.text_extractor import extract_text
 class DatabaseTask(Task):
     """Tâche Celery avec accès à la base de données."""
 
-    _db_session = None
+    _db_session: Any = None
 
-    def after_return(self, *args, **kwargs):
+    def after_return(self, *args: Any, **kwargs: Any) -> None:
         """Ferme la session DB après l'exécution."""
         if self._db_session:
             asyncio.run(self._db_session.close())
@@ -55,7 +57,9 @@ async def _analyze_contract_async(task: Task, contract_id: str) -> dict:
     async with AsyncSessionLocal() as db:
         try:
             # Récupère le contrat
-            result = await db.execute(select(Contract).where(Contract.id == UUID(contract_id)))
+            result = await db.execute(
+                select(Contract).where(col(Contract.id) == UUID(contract_id))
+            )
             contract = result.scalar_one_or_none()
 
             if not contract:
@@ -63,7 +67,7 @@ async def _analyze_contract_async(task: Task, contract_id: str) -> dict:
 
             # Récupère ou crée l'analyse
             result = await db.execute(
-                select(Analysis).where(Analysis.contract_id == UUID(contract_id))
+                select(Analysis).where(col(Analysis.contract_id) == UUID(contract_id))
             )
             analysis = result.scalar_one_or_none()
 
@@ -113,14 +117,16 @@ async def _analyze_contract_async(task: Task, contract_id: str) -> dict:
             # Met à jour le statut d'erreur
             try:
                 result = await db.execute(
-                    select(Analysis).where(Analysis.contract_id == UUID(contract_id))
+                    select(Analysis).where(col(Analysis.contract_id) == UUID(contract_id))
                 )
                 analysis = result.scalar_one_or_none()
                 if analysis:
                     analysis.status = AnalysisStatus.FAILED
                     analysis.error_message = str(exc)
 
-                result = await db.execute(select(Contract).where(Contract.id == UUID(contract_id)))
+                result = await db.execute(
+                    select(Contract).where(col(Contract.id) == UUID(contract_id))
+                )
                 contract = result.scalar_one_or_none()
                 if contract:
                     contract.status = ContractStatus.FAILED

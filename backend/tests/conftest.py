@@ -1,5 +1,6 @@
 """Pytest configuration and fixtures."""
 
+import os
 import asyncio
 from collections.abc import AsyncGenerator, Generator
 
@@ -7,16 +8,18 @@ import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlmodel import SQLModel
+
+# Ensure tests use a local SQLite database before importing the app
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
 
 from app.config import settings
 from app.db.session import get_db
 from app.main import app
 
-# Use an in-memory SQLite database for testing
-TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
+# Use a local SQLite database for testing
+TEST_DATABASE_URL = settings.DATABASE_URL
 
 # Create async engine for tests
 engine = create_async_engine(
@@ -26,12 +29,11 @@ engine = create_async_engine(
 )
 
 # Session factory for tests
-TestingSessionLocal = sessionmaker(
+TestingSessionLocal = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
     expire_on_commit=False,
     autoflush=False,
-    autocommit=False,
 )
 
 
@@ -75,10 +77,10 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 @pytest.fixture
 def client(db_session: AsyncSession) -> Generator[TestClient, None, None]:
     """Create a test client with overridden dependencies."""
-    
-    def override_get_db():
+
+    def override_get_db() -> Generator[AsyncSession, None, None]:
         yield db_session
-    
+
     app.dependency_overrides[get_db] = override_get_db
     
     with TestClient(app) as test_client:
@@ -90,10 +92,10 @@ def client(db_session: AsyncSession) -> Generator[TestClient, None, None]:
 @pytest_asyncio.fixture
 async def async_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """Create an async test client."""
-    
-    def override_get_db():
+
+    def override_get_db() -> Generator[AsyncSession, None, None]:
         yield db_session
-    
+
     app.dependency_overrides[get_db] = override_get_db
     
     async with AsyncClient(app=app, base_url="http://test") as ac:

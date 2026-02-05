@@ -44,7 +44,12 @@ services:
       dockerfile: Dockerfile
     container_name: acg-celery-worker
     restart: unless-stopped
-    command: celery -A app.celery_app worker --loglevel=info --concurrency=2
+    # NOTE: tasks utilisent asyncio/asyncpg; en pool prefork + concurrency>1 on voit des erreurs
+    # "Future attached to a different loop" / "another operation is in progress".
+    # Pour stabiliser (MVP), on force un worker mono-process.
+    command: celery -A app.celery_app worker --loglevel=info --pool=solo --concurrency=1
+    healthcheck:
+      disable: true
     environment:
       - DEBUG=${DEBUG:-false}
       - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/contract_guardian}
@@ -72,6 +77,8 @@ services:
     container_name: acg-celery-beat
     restart: unless-stopped
     command: celery -A app.celery_app beat --loglevel=info
+    healthcheck:
+      disable: true
     environment:
       - DEBUG=${DEBUG:-false}
       - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/contract_guardian}

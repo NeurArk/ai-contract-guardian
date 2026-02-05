@@ -5,10 +5,11 @@ asynchrones avec SQLModel et asyncpg.
 """
 
 from collections.abc import AsyncGenerator
+from typing import cast
 
 import redis.asyncio as redis
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.orm import sessionmaker
+from redis.asyncio import Redis
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.config import settings
@@ -21,12 +22,11 @@ engine = create_async_engine(
 )
 
 # Session factory
-AsyncSessionLocal = sessionmaker(
+AsyncSessionLocal = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
     expire_on_commit=False,
     autoflush=False,
-    autocommit=False,
 )
 
 
@@ -67,10 +67,13 @@ async def init_db() -> None:
         await conn.run_sync(SQLModel.metadata.create_all)
 
 
-async def get_redis_client() -> redis.Redis:
+async def get_redis_client() -> Redis:
     """Crée et retourne un client Redis asynchrone.
 
     Returns:
         Client Redis asynchrone
     """
-    return redis.from_url(settings.REDIS_URL, encoding="utf-8", decode_responses=True)
+    return cast(
+        Redis,
+        redis.from_url(settings.REDIS_URL, encoding="utf-8", decode_responses=True),
+    )

@@ -4,10 +4,13 @@ Ce module définit les endpoints pour l'authentification.
 """
 
 from datetime import timedelta
+import time
+from typing import cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
+from sqlmodel import col
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.security import (
@@ -42,7 +45,7 @@ async def register(
         HTTPException: Si l'email est déjà utilisé
     """
     # Vérifie si l'email existe déjà
-    result = await db.execute(select(User).where(User.email == user_data.email))
+    result = await db.execute(select(User).where(col(User.email) == user_data.email))
     existing_user = result.scalar_one_or_none()
 
     if existing_user:
@@ -82,7 +85,7 @@ async def login(
         HTTPException: Si les identifiants sont invalides
     """
     # Recherche l'utilisateur
-    result = await db.execute(select(User).where(User.email == credentials.email))
+    result = await db.execute(select(User).where(col(User.email) == credentials.email))
     user = result.scalar_one_or_none()
 
     if not user or not verify_password(credentials.password, user.password_hash):
@@ -128,7 +131,7 @@ async def get_me(
     Raises:
         HTTPException: Si l'utilisateur n'est pas trouvé
     """
-    result = await db.execute(select(User).where(User.id == current_user_id))
+    result = await db.execute(select(User).where(col(User.id) == current_user_id))
     user = result.scalar_one_or_none()
 
     if not user:
@@ -137,7 +140,7 @@ async def get_me(
             detail="Utilisateur non trouvé",
         )
 
-    return user
+    return cast(User, user)
 
 
 @router.post("/refresh")
@@ -192,7 +195,7 @@ async def refresh_token(
         )
 
     # Get user from database
-    result = await db.execute(select(User).where(User.id == UUID(user_id)))
+    result = await db.execute(select(User).where(col(User.id) == UUID(user_id)))
     user = result.scalar_one_or_none()
 
     if not user or not user.is_active:
@@ -206,8 +209,8 @@ async def refresh_token(
     if redis:
         # Get token expiry from payload
         exp = payload.get("exp")
-        if exp:
-            ttl = int(exp) - int(__import__("time").time())
+        if exp is not None:
+            ttl = int(exp) - int(time.time())
             if ttl > 0:
                 await redis.setex(f"blacklist:refresh:{token_data.refresh_token}", ttl, "1")
 
@@ -250,10 +253,12 @@ async def logout(
                 from app.core.security import decode_token
 
                 payload = decode_token(access_token)
-                if payload and payload.get("exp"):
-                    ttl = int(payload.get("exp")) - int(__import__("time").time())
-                    if ttl > 0:
-                        await redis.setex(f"blacklist:access:{access_token}", ttl, "1")
+                if payload:
+                    exp = payload.get("exp")
+                    if exp is not None:
+                        ttl = int(exp) - int(time.time())
+                        if ttl > 0:
+                            await redis.setex(f"blacklist:access:{access_token}", ttl, "1")
             except Exception:
                 pass  # Ignore errors during logout
 

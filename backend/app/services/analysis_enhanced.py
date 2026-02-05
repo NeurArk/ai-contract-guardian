@@ -9,12 +9,19 @@ Ce service intègre:
 
 import json
 import logging
-from typing import Any
+from typing import Any, cast
 
 from anthropic import AsyncAnthropic
+from anthropic.types import MessageParam
 
 from app.config import settings
-from app.core.legal_search import search_legal_sources, detect_clause_type, is_official_source
+from app.core.legal_search import (
+    LegalSearchResults,
+    LegalSource,
+    detect_clause_type,
+    is_official_source,
+    search_legal_sources,
+)
 from app.core.confidence import calculate_confidence, calculate_clause_confidence
 from app.prompts.legal_analysis import (
     format_prompt_with_context,
@@ -48,7 +55,12 @@ async def analyze_contract_enhanced(
     # ==========================================================================
     # ÉTAPE 1: Recherche de sources juridiques
     # ==========================================================================
-    search_results = {"sources": [], "confidence_score": 0, "official_count": 0}
+    search_results: LegalSearchResults = {
+        "sources": [],
+        "confidence_score": 0.0,
+        "official_count": 0,
+        "search_queries": [],
+    }
 
     if use_web_search:
         try:
@@ -71,40 +83,44 @@ async def analyze_contract_enhanced(
     # ==========================================================================
     prompt = format_prompt_with_context(
         contract_text=contract_text,
-        search_results=search_results,
+        search_results=[dict(source) for source in search_results["sources"]],
     )
 
     # ==========================================================================
     # ÉTAPE 3: Appel au LLM avec tool web_search de Claude
     # ==========================================================================
     try:
+        messages: list[MessageParam] = [
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ]
+        tools_payload = [{"type": "web_search", "name": "web_search_tool"}]
+
         response = await anthropic_client.messages.create(
             model=settings.ANTHROPIC_MODEL or "claude-sonnet-4-5-20250929",
             max_tokens=4096,
             system=LEGAL_ANALYSIS_SYSTEM_PROMPT,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-            tools=[{"type": "web_search", "name": "web_search_tool"}],
+            messages=messages,
             temperature=0.1,  # Faible pour plus de déterminisme
+            extra_body={"tools": tools_payload},
         )
 
         # Extrait le contenu JSON de la réponse
         content = response.content[0].text if response.content else ""
 
         # Tente de parser le JSON
+        analysis_data: dict[str, Any]
         try:
-            analysis_data = json.loads(content)
+            analysis_data = cast(dict[str, Any], json.loads(content))
         except json.JSONDecodeError:
             # Si pas de JSON valide, tente d'extraire entre ```json et ```
             import re
 
             json_match = re.search(r"```json\n(.*?)\n```", content, re.DOTALL)
             if json_match:
-                analysis_data = json.loads(json_match.group(1))
+                analysis_data = cast(dict[str, Any], json.loads(json_match.group(1)))
             else:
                 # Fallback: retourne le texte brut
                 logger.warning("Réponse LLM non-JSON, retour format brut")
@@ -119,28 +135,34 @@ async def analyze_contract_enhanced(
         # ==========================================================================
         # ÉTAPE 4: Calcul du score de confiance
         # ==========================================================================
-        sources = search_results.get("sources", [])
+        sources: list[LegalSource] = search_results["sources"]
         sources_count = len(sources)
-        official_count = search_results.get(
-            "official_count",
-            sum(1 for source in sources if is_official_source(source.get("url", ""))),
-        )
+        official_count = search_results["official_count"]
+        if sources_count and official_count == 0:
+            official_count = sum(
+                is_official_source(str(source.get("url", ""))) for source in sources
+            )
         official_ratio = (official_count / sources_count) if sources_count else 0.0
+        analyses_data = analysis_data.get("analyses")
         has_citations = bool(
             analysis_data.get("articles_applicables")
             or analysis_data.get("citations")
-            or (analysis_data.get("analyses") and any(
-                clause.get("articles_applicables") for clause in analysis_data["analyses"]
-            ))
+            or (
+                isinstance(analyses_data, list)
+                and any(
+                    isinstance(clause, dict) and clause.get("articles_applicables")
+                    for clause in analyses_data
+                )
+            )
         )
-        consistency_score = float(search_results.get("confidence_score", 0.0))
+        consistency_score = float(search_results["confidence_score"])
 
         confidence_result = calculate_confidence(
             has_citations=has_citations,
             sources_count=sources_count,
             official_sources_ratio=official_ratio,
             consistency_score=consistency_score,
-            search_results=sources,
+            search_results=[dict(source) for source in sources],
         )
 
         # Met à jour le score dans les données d'analyse
@@ -155,8 +177,10 @@ async def analyze_contract_enhanced(
         }
 
         # Calcule le score pour chaque clause
-        if "analyses" in analysis_data:
-            for clause_analysis in analysis_data["analyses"]:
+        if isinstance(analyses_data, list):
+            for clause_analysis in analyses_data:
+                if not isinstance(clause_analysis, dict):
+                    continue
                 clause_text = (
                     clause_analysis.get("analyse_juridique")
                     or clause_analysis.get("analyse")
@@ -174,8 +198,8 @@ async def analyze_contract_enhanced(
         # ÉTAPE 5: Ajout des sources et vérification langue
         # ==========================================================================
         # Ajoute les sources utilisées
-        analysis_data["_sources_used"] = search_results.get("sources", [])
-        analysis_data["_search_queries"] = search_results.get("search_queries", [])
+        analysis_data["_sources_used"] = search_results["sources"]
+        analysis_data["_search_queries"] = search_results["search_queries"]
 
         # Vérifie que tout est en français (anti-anglais)
         analysis_data = _verify_french_content(analysis_data)
@@ -246,8 +270,11 @@ def _verify_french_content(data: dict[str, Any]) -> dict[str, Any]:
                 break
 
     # Vérifie les analyses
-    if "analyses" in data:
-        for i, analysis in enumerate(data["analyses"]):
+    analyses = data.get("analyses")
+    if isinstance(analyses, list):
+        for analysis in analyses:
+            if not isinstance(analysis, dict):
+                continue
             for key in ["analyse_juridique", "risque_identifie"]:
                 if key in analysis and isinstance(analysis[key], str):
                     if not check_text_french(analysis[key]):
@@ -265,7 +292,7 @@ async def verify_analysis_quality(analysis_data: dict[str, Any]) -> dict[str, An
     Returns:
         Rapport de vérification
     """
-    issues = []
+    issues: list[dict[str, Any]] = []
     score = 100
 
     # Vérifie la présence du disclaimer
@@ -281,7 +308,11 @@ async def verify_analysis_quality(analysis_data: dict[str, Any]) -> dict[str, An
 
     # Vérifie les citations d'articles
     analyses = analysis_data.get("analyses", [])
+    if not isinstance(analyses, list):
+        analyses = []
     for analysis in analyses:
+        if not isinstance(analysis, dict):
+            continue
         articles = analysis.get("articles_applicables", [])
         if not articles:
             issues.append(

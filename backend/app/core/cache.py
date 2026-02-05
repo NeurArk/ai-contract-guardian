@@ -6,17 +6,20 @@ This module provides caching functionality for frequently accessed data.
 import json
 import pickle
 from functools import wraps
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Coroutine, ParamSpec, TypeVar, cast
+
+from redis.asyncio import Redis
 
 from app.config import settings
 
+P = ParamSpec("P")
 T = TypeVar("T")
 
 
 class Cache:
     """Redis cache wrapper with async support."""
 
-    def __init__(self, redis_client=None):
+    def __init__(self, redis_client: Redis | None = None) -> None:
         self.redis = redis_client
         self.default_ttl = 300  # 5 minutes
 
@@ -100,7 +103,8 @@ class Cache:
         try:
             keys = await self.redis.keys(pattern)
             if keys:
-                return await self.redis.delete(*keys)
+                deleted = await self.redis.delete(*keys)
+                return int(deleted)
             return 0
         except Exception:
             return 0
@@ -109,7 +113,7 @@ class Cache:
         self,
         ttl: int | None = None,
         key_prefix: str = "",
-    ) -> Callable:
+    ) -> Callable[[Callable[P, Any]], Callable[P, Any]]:
         """Decorator to cache function results.
 
         Args:
@@ -120,27 +124,41 @@ class Cache:
             Decorator function
         """
 
-        def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        def decorator(func: Callable[P, Any]) -> Callable[P, Any]:
+            if self._is_async(func):
+
+                @wraps(func)
+                async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
+                    if not self.redis:
+                        return await cast(
+                            Callable[P, Coroutine[Any, Any, Any]], func
+                        )(
+                            *args, **kwargs
+                        )
+
+                    # Generate cache key
+                    cache_key = (
+                        f"{key_prefix}:{func.__name__}:{self._make_key(args, kwargs)}"
+                    )
+
+                    # Try to get from cache
+                    cached_value = await self.get(cache_key)
+                    if cached_value is not None:
+                        return cached_value
+
+                    # Call function and cache result
+                    result = await cast(
+                        Callable[P, Coroutine[Any, Any, Any]], func
+                    )(
+                        *args, **kwargs
+                    )
+                    await self.set(cache_key, result, ttl)
+                    return result
+
+                return async_wrapper
+
             @wraps(func)
-            async def async_wrapper(*args, **kwargs) -> T:
-                if not self.redis:
-                    return await func(*args, **kwargs)
-
-                # Generate cache key
-                cache_key = f"{key_prefix}:{func.__name__}:{self._make_key(args, kwargs)}"
-
-                # Try to get from cache
-                cached_value = await self.get(cache_key)
-                if cached_value is not None:
-                    return cached_value
-
-                # Call function and cache result
-                result = await func(*args, **kwargs)
-                await self.set(cache_key, result, ttl)
-                return result
-
-            @wraps(func)
-            def sync_wrapper(*args, **kwargs) -> T:
+            def sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> Any:
                 if not self.redis:
                     return func(*args, **kwargs)
 
@@ -151,11 +169,11 @@ class Cache:
                 # Return result without caching
                 return func(*args, **kwargs)
 
-            return async_wrapper if self._is_async(func) else sync_wrapper
+            return sync_wrapper
 
         return decorator
 
-    def _make_key(self, args: tuple, kwargs: dict) -> str:
+    def _make_key(self, args: tuple[Any, ...], kwargs: dict[str, Any]) -> str:
         """Generate a cache key from arguments."""
         key_data = {
             "args": args,
@@ -163,7 +181,7 @@ class Cache:
         }
         return json.dumps(key_data, sort_keys=True, default=str)
 
-    def _is_async(self, func: Callable) -> bool:
+    def _is_async(self, func: Callable[..., Any]) -> bool:
         """Check if a function is async."""
         import inspect
 
@@ -174,7 +192,7 @@ class Cache:
 _cache_instance: Cache | None = None
 
 
-def get_cache(redis_client=None) -> Cache:
+def get_cache(redis_client: Redis | None = None) -> Cache:
     """Get or create cache instance.
 
     Args:

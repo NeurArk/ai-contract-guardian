@@ -1,16 +1,19 @@
-from fastapi import FastAPI
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
 
 from app.api.health import router as health_router
 from app.api.auth import router as auth_router
 from app.api.contracts import router as contracts_router
+from app.api.analysis_v2 import router as analysis_v2_router
 from app.config import settings
 from app.core.security_middleware import setup_security_middleware
 from app.db.session import get_redis_client
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Application lifespan handler."""
     # Startup
     redis_client = await get_redis_client()
@@ -46,10 +49,11 @@ setup_security_middleware(
 app.include_router(health_router, tags=["health"])
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(contracts_router, prefix="/api/v1")
+app.include_router(analysis_v2_router, prefix="/api/v1")
 
 
 @app.get("/")
-async def root():
+async def root() -> dict[str, str]:
     """Redirect vers la documentation."""
     return {
         "message": "Bienvenue sur AI Contract Guardian API",
@@ -59,7 +63,7 @@ async def root():
 
 
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
     """Initialisation au démarrage de l'application."""
     # Crée les tables si elles n'existent pas (dev seulement)
     # En production, utiliser Alembic

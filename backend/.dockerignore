@@ -1,0 +1,17 @@
+# Python / venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Test / cache
+.pytest_cache/
+.mypy_cache/
+
+# Local DB files (avoid build context race)
+test.db*
+
+# Misc
+.DS_Store

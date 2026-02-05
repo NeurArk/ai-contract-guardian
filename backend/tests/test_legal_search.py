@@ -19,37 +19,37 @@ from app.core.legal_search import (
 class TestDetectClauseType:
     """Tests de la détection de type de clause."""
     
-    def test_detect_penalty_clause(self):
+    def test_detect_penalty_clause(self) -> None:
         """Test détection clause pénalité."""
         text = "En cas de retard de paiement, une pénalité de 10% sera appliquée."
         result = detect_clause_type(text)
         assert "clause_pénalité" in result
     
-    def test_detect_resiliation_clause(self):
+    def test_detect_resiliation_clause(self) -> None:
         """Test détection clause de résiliation."""
         text = "Le contrat peut être résilié avec un préavis de 3 mois."
         result = detect_clause_type(text)
         assert "délai_résiliation" in result
     
-    def test_detect_garantie_clause(self):
+    def test_detect_garantie_clause(self) -> None:
         """Test détection clause de garantie."""
         text = "Le vendeur garantit le produit contre tout vice caché."
         result = detect_clause_type(text)
         assert "garantie" in result
     
-    def test_detect_confidentiality_clause(self):
+    def test_detect_confidentiality_clause(self) -> None:
         """Test détection clause de confidentialité."""
         text = "Les parties s'engagent à garder confidentielles les informations."
         result = detect_clause_type(text)
         assert "confidentialité" in result
     
-    def test_detect_multiple_clauses(self):
+    def test_detect_multiple_clauses(self) -> None:
         """Test détection multiple clauses."""
         text = "Clause de non-concurrence et pénalité de retard."
         result = detect_clause_type(text)
         assert len(result) >= 2
     
-    def test_empty_text(self):
+    def test_empty_text(self) -> None:
         """Test avec texte vide."""
         result = detect_clause_type("")
         assert result == ["general"]
@@ -58,22 +58,22 @@ class TestDetectClauseType:
 class TestOfficialSources:
     """Tests des sources officielles."""
     
-    def test_is_official_source_legifrance(self):
+    def test_is_official_source_legifrance(self) -> None:
         """Test reconnaissance Légifrance."""
         url = "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000032042139"
         assert is_official_source(url) is True
     
-    def test_is_official_source_cassation(self):
+    def test_is_official_source_cassation(self) -> None:
         """Test reconnaissance Cour de cassation."""
         url = "https://www.courdecassation.fr/..."
         assert is_official_source(url) is True
     
-    def test_is_not_official_source(self):
+    def test_is_not_official_source(self) -> None:
         """Test rejet source non officielle."""
         url = "https://www.blog-droit.com/article"
         assert is_official_source(url) is False
     
-    def test_all_official_sources_are_strings(self):
+    def test_all_official_sources_are_strings(self) -> None:
         """Test que toutes les sources sont des strings."""
         for source in OFFICIAL_SOURCES:
             assert isinstance(source, str)
@@ -83,17 +83,17 @@ class TestOfficialSources:
 class TestSourceType:
     """Tests de détermination du type de source."""
     
-    def test_legislation_type(self):
+    def test_legislation_type(self) -> None:
         """Test type législation."""
         url = "https://www.legifrance.gouv.fr/codes/"
         assert get_source_type(url) == "legislation"
     
-    def test_jurisprudence_type(self):
+    def test_jurisprudence_type(self) -> None:
         """Test type jurisprudence."""
         url = "https://www.courdecassation.fr/..."
         assert get_source_type(url) == "jurisprudence"
     
-    def test_doctrine_type(self):
+    def test_doctrine_type(self) -> None:
         """Test type doctrine."""
         url = "https://www.dalloz.fr/..."
         assert get_source_type(url) == "doctrine"
@@ -102,19 +102,19 @@ class TestSourceType:
 class TestCalculateRelevance:
     """Tests du calcul de pertinence."""
     
-    def test_official_source_bonus(self):
+    def test_official_source_bonus(self) -> None:
         """Test bonus source officielle."""
         url = "https://www.legifrance.gouv.fr/..."
         score = calculate_relevance(url, "Titre", "Snippet", "query")
         assert score > 50  # Score de base
     
-    def test_jurisprudence_bonus(self):
+    def test_jurisprudence_bonus(self) -> None:
         """Test bonus jurisprudence."""
         url = "https://www.courdecassation.fr/jurisprudence/..."
         score = calculate_relevance(url, "Arrêt", "Snippet", "query")
         assert score >= 50
     
-    def test_recent_date_bonus(self):
+    def test_recent_date_bonus(self) -> None:
         """Test bonus date récente."""
         url = "https://www.legifrance.gouv.fr/2024/..."
         score = calculate_relevance(url, "Article 2024", "Snippet", "query")
@@ -125,14 +125,14 @@ class TestCalculateRelevance:
 class TestSearchTemplates:
     """Tests des templates de recherche."""
     
-    def test_all_templates_have_legifrance(self):
+    def test_all_templates_have_legifrance(self) -> None:
         """Test que tous les templates incluent Légifrance."""
         for clause_type, queries in SEARCH_TEMPLATES.items():
             for query in queries:
                 assert "legifrance.gouv.fr" in query, \
                     f"Template {clause_type} sans Légifrance"
     
-    def test_common_clause_types_have_templates(self):
+    def test_common_clause_types_have_templates(self) -> None:
         """Test que les types courants ont des templates."""
         common_types = [
             "clause_pénalité",
@@ -145,7 +145,7 @@ class TestSearchTemplates:
             assert clause_type in SEARCH_TEMPLATES, \
                 f"Type {clause_type} sans template"
     
-    def test_templates_are_lists(self):
+    def test_templates_are_lists(self) -> None:
         """Test que les templates sont des listes."""
         for clause_type, queries in SEARCH_TEMPLATES.items():
             assert isinstance(queries, list)
@@ -157,20 +157,20 @@ class TestSearchTemplates:
 class TestEstimateDate:
     """Tests de l'estimation de date."""
     
-    def test_extract_year_from_url(self):
+    def test_extract_year_from_url(self) -> None:
         """Test extraction année URL."""
         url = "https://www.legifrance.gouv.fr/2024/01/15/article"
         date = estimate_date_from_url(url)
         assert "2024" in str(date)
     
-    def test_extract_year_from_legifrance_id(self):
+    def test_extract_year_from_legifrance_id(self) -> None:
         """Test extraction ID Légifrance."""
         url = "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000032042139"
         # L'ID contient souvent une année
         date = estimate_date_from_url(url)
         # Pas de date claire dans cet ID
     
-    def test_no_date_found(self):
+    def test_no_date_found(self) -> None:
         """Test quand pas de date trouvée."""
         url = "https://www.legifrance.gouv.fr/codes/"
         date = estimate_date_from_url(url)
@@ -181,7 +181,7 @@ class TestEstimateDate:
 class TestSearchLegalSources:
     """Tests de la recherche de sources (asynchrone)."""
     
-    async def test_search_returns_structure(self):
+    async def test_search_returns_structure(self) -> None:
         """Test que la recherche retourne la bonne structure."""
         from app.core.legal_search import search_legal_sources
         
@@ -198,7 +198,7 @@ class TestSearchLegalSources:
         assert "search_queries" in result
         assert isinstance(result["sources"], list)
     
-    async def test_search_with_clause_type(self):
+    async def test_search_with_clause_type(self) -> None:
         """Test recherche avec type de clause."""
         from app.core.legal_search import search_legal_sources
         
@@ -212,7 +212,7 @@ class TestSearchLegalSources:
         # Les requêtes doivent contenir le type
         assert any("garantie" in q for q in result["search_queries"])
     
-    async def test_search_with_keywords(self):
+    async def test_search_with_keywords(self) -> None:
         """Test recherche avec mots-clés."""
         from app.core.legal_search import search_legal_sources
         
@@ -229,7 +229,7 @@ class TestSearchLegalSources:
 class TestContractExamples:
     """Tests avec des exemples de contrats réels."""
     
-    def test_cgv_ecommerce_detection(self):
+    def test_cgv_ecommerce_detection(self) -> None:
         """Test détection clauses CGV e-commerce."""
         text = """
         CONDITIONS GÉNÉRALES DE VENTE
@@ -261,7 +261,7 @@ class TestContractExamples:
         assert "clause_pénalité" in clauses
         assert "droit_retractation" in clauses
     
-    def test_b2b_contract_detection(self):
+    def test_b2b_contract_detection(self) -> None:
         """Test détection contrat B2B."""
         text = """
         CONTRAT DE PRESTATION DE SERVICES

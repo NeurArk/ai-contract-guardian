@@ -6,7 +6,7 @@ from app.services.analysis_enhanced import analyze_contract_enhanced
 
 
 @pytest.mark.asyncio
-async def test_analyze_contract_basic():
+async def test_analyze_contract_basic() -> None:
     """Test basique du service d'analyse."""
     contract_text = """
     CONTRAT DE TEST

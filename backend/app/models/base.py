@@ -5,11 +5,10 @@ Les modèles spécifiques seront définis dans des fichiers séparés.
 """
 
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, ClassVar, cast
 from uuid import UUID, uuid4
 
-from sqlalchemy import Column, DateTime, event
-from sqlalchemy.orm import declared_attr
+from sqlalchemy import Column, DateTime
 from sqlmodel import Field, SQLModel
 
 
@@ -34,15 +33,24 @@ class BaseModel(SQLModel):
 
 
 class TimestampMixin(SQLModel):
-    """Mixin pour les timestamps created_at et updated_at."""
+    """Mixin pour les timestamps created_at et updated_at.
+
+    Important: ne pas réutiliser d'instances `sqlalchemy.Column` dans un mixin,
+    sinon SQLAlchemy/SQLModel peut tenter de rattacher la même colonne à plusieurs
+    tables (erreur: "Column object ... already assigned to Table").
+
+    Solution: utiliser sa_type + sa_column_kwargs au lieu de sa_column=Column(...).
+    """
 
     created_at: datetime = Field(
         default_factory=utc_now,
-        sa_type=DateTime(timezone=True),
+        sa_type=cast(Any, DateTime(timezone=True)),
+        nullable=False,
     )
     updated_at: datetime = Field(
         default_factory=utc_now,
-        sa_type=DateTime(timezone=True),
+        sa_type=cast(Any, DateTime(timezone=True)),
+        nullable=False,
     )
 
 
@@ -65,11 +73,7 @@ class BaseTableModel(BaseModel, UUIDMixin, TimestampMixin):
     """
 
     __abstract__ = True
-
-    @declared_attr.directive
-    def __tablename__(cls) -> str:
-        """Génère automatiquement le nom de la table."""
-        return cls.__name__.lower()
+    __tablename__: ClassVar[str]
 
 
 def update_timestamp(mapper: Any, connection: Any, target: Any) -> None:

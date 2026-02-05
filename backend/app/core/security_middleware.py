@@ -7,9 +7,12 @@ This module provides security enhancements including:
 - CSRF protection helpers
 """
 
+from collections.abc import Awaitable, Callable
+
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from redis.asyncio import Redis
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
@@ -38,7 +41,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "form-action 'self';"
         )
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
         response = await call_next(request)
 
         # Prevent MIME type sniffing
@@ -83,16 +90,20 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: ASGIApp,
-        redis_client=None,
+        redis_client: Redis | None = None,
         requests_per_minute: int = 60,
         burst_size: int = 10,
-    ):
+    ) -> None:
         super().__init__(app)
         self.redis = redis_client
         self.requests_per_minute = requests_per_minute
         self.burst_size = burst_size
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
         # Skip rate limiting if no Redis client
         if not self.redis:
             return await call_next(request)
@@ -131,7 +142,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 def setup_security_middleware(
     app: FastAPI,
     cors_origins: list[str],
-    redis_client=None,
+    redis_client: Redis | None = None,
     enable_gzip: bool = True,
     allow_iframes: bool = False,
 ) -> None:

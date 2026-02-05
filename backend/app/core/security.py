@@ -5,7 +5,7 @@ et de la sécurité (JWT, password hashing, etc.).
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
@@ -32,7 +32,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         True si le mot de passe correspond, False sinon
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    return bool(pwd_context.verify(plain_password, hashed_password))
 
 
 def get_password_hash(password: str) -> str:
@@ -44,7 +44,7 @@ def get_password_hash(password: str) -> str:
     Returns:
         Le hash du mot de passe
     """
-    return pwd_context.hash(password)
+    return str(pwd_context.hash(password))
 
 
 def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
@@ -67,7 +67,7 @@ def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = 
 
     to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    return encoded_jwt
+    return cast(str, encoded_jwt)
 
 
 def create_refresh_token(data: dict[str, Any]) -> str:
@@ -83,7 +83,7 @@ def create_refresh_token(data: dict[str, Any]) -> str:
     expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire, "type": "refresh"})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    return encoded_jwt
+    return cast(str, encoded_jwt)
 
 
 def decode_token(token: str) -> dict[str, Any] | None:
@@ -96,7 +96,10 @@ def decode_token(token: str) -> dict[str, Any] | None:
         Les données décodées ou None si invalide
     """
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = cast(
+            dict[str, Any],
+            jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]),
+        )
         return payload
     except JWTError:
         return None
@@ -112,7 +115,10 @@ def verify_access_token(token: str) -> dict[str, Any] | None:
         Les données décodées ou None si invalide
     """
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = cast(
+            dict[str, Any],
+            jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]),
+        )
         if payload.get("type") != "access":
             return None
         return payload
@@ -130,7 +136,10 @@ def verify_refresh_token(token: str) -> dict[str, Any] | None:
         Les données décodées ou None si invalide
     """
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = cast(
+            dict[str, Any],
+            jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]),
+        )
         if payload.get("type") != "refresh":
             return None
         return payload

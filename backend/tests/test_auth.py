@@ -10,7 +10,7 @@ from app.models import User
 
 
 @pytest.fixture
-def user_data():
+def user_data() -> dict[str, str]:
     """Sample user data."""
     return {
         "email": "test@example.com",
@@ -21,7 +21,12 @@ def user_data():
 class TestAuthEndpoints:
     """Test authentication endpoints."""
     
-    def test_register_success(self, client: TestClient, db_session: AsyncSession, user_data):
+    def test_register_success(
+        self,
+        client: TestClient,
+        db_session: AsyncSession,
+        user_data: dict[str, str],
+    ) -> None:
         """Test successful user registration."""
         response = client.post("/api/v1/auth/register", json=user_data)
         
@@ -33,7 +38,12 @@ class TestAuthEndpoints:
         assert "password_hash" not in data
         assert data["is_active"] is True
     
-    def test_register_duplicate_email(self, client: TestClient, db_session: AsyncSession, user_data):
+    def test_register_duplicate_email(
+        self,
+        client: TestClient,
+        db_session: AsyncSession,
+        user_data: dict[str, str],
+    ) -> None:
         """Test registration with duplicate email."""
         # First registration
         response = client.post("/api/v1/auth/register", json=user_data)
@@ -44,7 +54,12 @@ class TestAuthEndpoints:
         assert response.status_code == 400
         assert "email" in response.json()["detail"].lower() or "déjà" in response.json()["detail"].lower()
     
-    def test_login_success(self, client: TestClient, db_session: AsyncSession, user_data):
+    def test_login_success(
+        self,
+        client: TestClient,
+        db_session: AsyncSession,
+        user_data: dict[str, str],
+    ) -> None:
         """Test successful login."""
         # Register first
         client.post("/api/v1/auth/register", json=user_data)
@@ -60,7 +75,12 @@ class TestAuthEndpoints:
         assert "user" in data
         assert data["user"]["email"] == user_data["email"]
     
-    def test_login_wrong_password(self, client: TestClient, db_session: AsyncSession, user_data):
+    def test_login_wrong_password(
+        self,
+        client: TestClient,
+        db_session: AsyncSession,
+        user_data: dict[str, str],
+    ) -> None:
         """Test login with wrong password."""
         # Register first
         client.post("/api/v1/auth/register", json=user_data)
@@ -74,7 +94,11 @@ class TestAuthEndpoints:
         
         assert response.status_code == 401
     
-    def test_login_nonexistent_user(self, client: TestClient, db_session: AsyncSession):
+    def test_login_nonexistent_user(
+        self,
+        client: TestClient,
+        db_session: AsyncSession,
+    ) -> None:
         """Test login with non-existent user."""
         response = client.post("/api/v1/auth/login", json={
             "email": "nonexistent@example.com",
@@ -83,13 +107,18 @@ class TestAuthEndpoints:
         
         assert response.status_code == 401
     
-    def test_get_me_unauthorized(self, client: TestClient):
+    def test_get_me_unauthorized(self, client: TestClient) -> None:
         """Test get me without authentication."""
         response = client.get("/api/v1/auth/me")
         
         assert response.status_code == 403  # or 401 depending on implementation
     
-    def test_get_me_authorized(self, client: TestClient, db_session: AsyncSession, user_data):
+    def test_get_me_authorized(
+        self,
+        client: TestClient,
+        db_session: AsyncSession,
+        user_data: dict[str, str],
+    ) -> None:
         """Test get me with authentication."""
         # Register and login
         client.post("/api/v1/auth/register", json=user_data)
@@ -111,7 +140,7 @@ class TestAuthEndpoints:
 class TestPasswordHashing:
     """Test password hashing utilities."""
     
-    def test_password_hash(self):
+    def test_password_hash(self) -> None:
         """Test password hashing and verification."""
         password = "TestPassword123!"
         hashed = get_password_hash(password)

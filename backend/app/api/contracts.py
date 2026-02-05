@@ -6,10 +6,12 @@ Ce module définit les endpoints pour la gestion des contrats.
 import os
 import shutil
 from pathlib import Path
+from typing import cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import select
+from sqlmodel import col
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.config import settings
@@ -157,8 +159,8 @@ async def list_contracts(
     """
     result = await db.execute(
         select(Contract)
-        .where(Contract.user_id == current_user_id)
-        .order_by(Contract.created_at.desc())
+        .where(col(Contract.user_id) == current_user_id)
+        .order_by(col(Contract.created_at).desc())
     )
     contracts = result.scalars().all()
     return list(contracts)
@@ -185,8 +187,8 @@ async def get_contract(
     """
     result = await db.execute(
         select(Contract).where(
-            Contract.id == contract_id,
-            Contract.user_id == current_user_id,
+            col(Contract.id) == contract_id,
+            col(Contract.user_id) == current_user_id,
         )
     )
     contract = result.scalar_one_or_none()
@@ -197,7 +199,7 @@ async def get_contract(
             detail="Contrat non trouvé",
         )
 
-    return contract
+    return cast(Contract, contract)
 
 
 @router.get("/{contract_id}/status", response_model=AnalysisStatusResponse)
@@ -219,8 +221,8 @@ async def get_contract_status(
     # Vérifie que le contrat existe et appartient à l'utilisateur
     result = await db.execute(
         select(Contract).where(
-            Contract.id == contract_id,
-            Contract.user_id == current_user_id,
+            col(Contract.id) == contract_id,
+            col(Contract.user_id) == current_user_id,
         )
     )
     contract = result.scalar_one_or_none()
@@ -232,7 +234,7 @@ async def get_contract_status(
         )
 
     # Récupère l'analyse
-    result = await db.execute(select(Analysis).where(Analysis.contract_id == contract_id))
+    result = await db.execute(select(Analysis).where(col(Analysis.contract_id) == contract_id))
     analysis = result.scalar_one_or_none()
 
     if not analysis:
@@ -272,8 +274,8 @@ async def get_contract_analysis(
     # Vérifie que le contrat existe et appartient à l'utilisateur
     result = await db.execute(
         select(Contract).where(
-            Contract.id == contract_id,
-            Contract.user_id == current_user_id,
+            col(Contract.id) == contract_id,
+            col(Contract.user_id) == current_user_id,
         )
     )
     contract = result.scalar_one_or_none()
@@ -285,7 +287,7 @@ async def get_contract_analysis(
         )
 
     # Récupère l'analyse
-    result = await db.execute(select(Analysis).where(Analysis.contract_id == contract_id))
+    result = await db.execute(select(Analysis).where(col(Analysis.contract_id) == contract_id))
     analysis = result.scalar_one_or_none()
 
     if not analysis:
@@ -300,4 +302,4 @@ async def get_contract_analysis(
             detail=f"Analyse non terminée. Statut actuel: {analysis.status}",
         )
 
-    return analysis
+    return cast(Analysis, analysis)

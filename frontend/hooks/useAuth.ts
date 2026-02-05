@@ -24,13 +24,14 @@ export function useAuth() {
   const registerMutation = useMutation({
     mutationFn: async (credentials: RegisterCredentials) => {
       const response = await authApi.register(credentials);
-      return response;
+      // Le backend ne renvoie pas le mot de passe : on le garde pour l'auto-login.
+      return { ...response, _plainPassword: credentials.password };
     },
-    onSuccess: async (data) => {
+    onSuccess: async (data: any) => {
       // Auto-login after registration
       const loginResponse = await authApi.login({
         email: data.email,
-        password: data.password,
+        password: data._plainPassword,
       });
       await storeLogin(loginResponse.access_token);
       router.push('/dashboard');
