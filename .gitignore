@@ -16,8 +16,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -54,6 +54,12 @@ node_modules/
 # Ignore Next.js build
 .next/
 out/
+
+# Ignore Playwright artifacts
+playwright-report/
+test-results/
+frontend/playwright-report/
+frontend/test-results/
 
 # Ignore coverage
 .coverage

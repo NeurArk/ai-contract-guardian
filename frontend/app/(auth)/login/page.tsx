@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
+import { getApiErrorMessage } from '@/lib/errors';
 import { Shield, Loader2, AlertCircle } from 'lucide-react';
 
 const loginSchema = z.object({
@@ -31,7 +32,13 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    await login(data);
+    // If login fails, React Query will set loginError.
+    // We must swallow the rejected promise to avoid Next.js rendering a client-side exception overlay.
+    try {
+      await login(data);
+    } catch {
+      // no-op
+    }
   };
 
   return (
@@ -57,7 +64,7 @@ export default function LoginPage() {
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    {loginError instanceof Error ? loginError.message : 'Erreur de connexion'}
+                    {getApiErrorMessage(loginError, 'Erreur de connexion')}
                   </AlertDescription>
                 </Alert>
               )}

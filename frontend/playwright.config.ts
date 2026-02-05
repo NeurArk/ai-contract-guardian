@@ -62,11 +62,20 @@ export default defineConfig({
     },
   ],
 
-  /* Run local dev server before starting the tests */
+  /* Run a web server before starting the tests.
+     - Local default: next dev (fast iteration)
+     - CI / stable runs: build + start (reproducible, avoids dev flakiness)
+  */
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
+    command:
+      process.env.PW_WEB_SERVER_COMMAND ||
+      (process.env.CI || process.env.PW_WEB_SERVER === 'prod'
+        ? 'npm run build && npm run start'
+        : 'npm run dev'),
+    url: process.env.BASE_URL || 'http://localhost:3000',
+    // In prod-mode tests, avoid reusing an already-running server if a fresh build just ran,
+    // otherwise we can get mismatched chunk hashes (HTML from old server, files from new build).
+    reuseExistingServer: !process.env.CI && process.env.PW_WEB_SERVER !== 'prod',
+    timeout: 180000,
   },
 });

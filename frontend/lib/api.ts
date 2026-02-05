@@ -8,7 +8,7 @@ import {
   RegisterCredentials,
 } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -35,8 +35,15 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      const url = error.config?.url || '';
+      const isAuthEndpoint =
+        url.includes('/api/v1/auth/login') || url.includes('/api/v1/auth/register');
+
+      // Do not force-redirect on expected 401s from auth endpoints.
+      if (!isAuthEndpoint) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

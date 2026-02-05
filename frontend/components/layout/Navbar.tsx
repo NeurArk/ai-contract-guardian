@@ -59,7 +59,7 @@ export function Navbar() {
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-4">
               <span className="text-sm text-slate-600">{user?.email}</span>
-              <Button variant="ghost" size="icon" onClick={logout}>
+              <Button variant="ghost" size="icon" onClick={logout} aria-label="Déconnexion">
                 <LogOut className="h-5 w-5" />
               </Button>
             </div>

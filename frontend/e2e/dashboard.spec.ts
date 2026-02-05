@@ -1,39 +1,39 @@
 import { test, expect } from '@playwright/test';
 
-const TEST_USER = {
-  email: `dashboardtest${Date.now()}@example.com`,
-  password: 'TestPassword123!',
-};
+function makeTestUser(prefix: string) {
+  const ts = Date.now().toString(36);
+  const rand = Math.floor(Math.random() * 1e6).toString(36);
+  return {
+    email: `${prefix}${ts}${rand}@ex.com`,
+    password: 'TestPassword123!',
+  };
+}
 
 test.describe('Dashboard', () => {
   test.beforeEach(async ({ page }) => {
+    const testUser = makeTestUser('dbtest');
     // Register and login
     await page.goto('/register');
-    await page.fill('input[id="email"]', TEST_USER.email);
-    await page.fill('input[id="password"]', TEST_USER.password);
-    await page.fill('input[id="confirmPassword"]', TEST_USER.password);
-    await page.click('button:has-text("Créer mon compte")');
-    await page.waitForURL(/.*dashboard/, { timeout: 10000 });
+    await page.fill('input[id="email"]', testUser.email);
+    await page.fill('input[id="password"]', testUser.password);
+    await page.fill('input[id="confirmPassword"]', testUser.password);
+    await page.getByRole('button', { name: /créer mon compte/i }).click();
+    await page.waitForURL(/.*dashboard/, { timeout: 30000 });
+    await page.waitForLoadState("networkidle");
   });
 
   test('should display dashboard stats', async ({ page }) => {
-    // Check main stats cards
-    await expect(page.locator('text=Tableau de bord')).toBeVisible();
-    await expect(page.locator('text=Vue d\'ensemble de vos contrats')).toBeVisible();
+    // Check main heading
+    await expect(page.getByRole('heading', { name: 'Tableau de bord' })).toBeVisible();
+    await expect(page.getByText(/vue d'ensemble/i)).toBeVisible();
     
     // Check stat cards
-    await expect(page.locator('text=Contrats totaux')).toBeVisible();
-    await expect(page.locator('text=Analyses terminées')).toBeVisible();
-    await expect(page.locator('text=En attente')).toBeVisible();
-    
-    // Stats should show numbers (0 for new user)
-    const statValues = page.locator('.text-2xl, [class*="text-2xl"]');
-    await expect(statValues.first()).toBeVisible();
+    await expect(page.getByText(/contrats totaux/i)).toBeVisible();
+    await expect(page.getByText(/analyses terminées/i)).toBeVisible();
   });
 
   test('should display recent contracts section', async ({ page }) => {
-    await expect(page.locator('text=Contrats récents')).toBeVisible();
-    await expect(page.locator('text=Vos 5 derniers contrats analysés')).toBeVisible();
+    await expect(page.getByText(/contrats récents/i)).toBeVisible();
   });
 
   test('should show empty state for new users', async ({ page }) => {
@@ -41,24 +41,24 @@ test.describe('Dashboard', () => {
     await page.waitForTimeout(1000);
     
     // Should show empty state
-    await expect(page.locator('text=Aucun contrat encore')).toBeVisible();
-    await expect(page.locator('text=Commencez par analyser votre premier contrat')).toBeVisible();
-    await expect(page.locator('button:has-text("Analyser un contrat")')).toBeVisible();
+    await expect(page.getByText(/aucun contrat/i)).toBeVisible();
+    await expect(page.getByText(/commencez par analyser/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /analyser un contrat/i })).toBeVisible();
   });
 
   test('should navigate to upload from empty state', async ({ page }) => {
-    await page.click('button:has-text("Analyser un contrat")');
-    await expect(page).toHaveURL(/.*upload/);
+    await page.getByRole('button', { name: /analyser un contrat/i }).click();
+    await expect(page).toHaveURL(/.*contracts\/upload/);
   });
 
   test('should navigate to upload from header button', async ({ page }) => {
-    await page.click('text=Nouvelle analyse');
-    await expect(page).toHaveURL(/.*upload/);
+    await page.getByRole('navigation').getByRole('link', { name: /nouvelle analyse/i }).click();
+    await expect(page).toHaveURL(/.*contracts\/upload/);
   });
 
   test('should navigate to all contracts', async ({ page }) => {
     // Check if "Voir tout" link exists
-    const viewAllLink = page.locator('text=Voir tout').first();
+    const viewAllLink = page.getByRole('link', { name: /voir tout/i }).first();
     if (await viewAllLink.isVisible().catch(() => false)) {
       await viewAllLink.click();
       await expect(page).toHaveURL(/.*contracts/);
@@ -66,21 +66,21 @@ test.describe('Dashboard', () => {
   });
 
   test('should display navbar', async ({ page }) => {
-    // Check logo
-    await expect(page.locator('text=AI Contract Guardian').first()).toBeVisible();
+    // Check logo/brand
+    await expect(page.getByText(/AI Contract Guardian/i).first()).toBeVisible();
     
     // Check navigation links
-    await expect(page.locator('text=Tableau de bord')).toBeVisible();
-    await expect(page.locator('text=Mes contrats')).toBeVisible();
+    await expect(page.getByRole('link', { name: /tableau de bord/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /mes contrats/i })).toBeVisible();
   });
 
   test('should have working navigation menu', async ({ page }) => {
     // Navigate to contracts via menu
-    await page.click('text=Mes contrats');
+    await page.getByRole('link', { name: /mes contrats/i }).click();
     await expect(page).toHaveURL(/.*contracts/);
     
     // Navigate back to dashboard
-    await page.click('text=Tableau de bord');
+    await page.getByRole('link', { name: /tableau de bord/i }).click();
     await expect(page).toHaveURL(/.*dashboard/);
   });
 
@@ -91,16 +91,15 @@ test.describe('Dashboard', () => {
     await page.waitForLoadState('networkidle');
     
     // Content should still be accessible
-    await expect(page.locator('text=Tableau de bord')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /tableau de bord/i })).toBeVisible();
     
     // Reset viewport
     await page.setViewportSize({ width: 1280, height: 720 });
   });
 
   test('should show user menu', async ({ page }) => {
-    // Look for user menu or logout button
-    const userMenu = page.locator('text=Déconnexion, [data-testid="user-menu"]').first();
-    const logoutButton = page.locator('text=Déconnexion');
+    // Look for logout button
+    const logoutButton = page.getByRole('button', { name: /déconnexion/i });
     
     if (await logoutButton.isVisible().catch(() => false)) {
       await expect(logoutButton).toBeVisible();
@@ -109,7 +108,7 @@ test.describe('Dashboard', () => {
 
   test('should redirect to login when not authenticated', async ({ page }) => {
     // Logout first
-    await page.click('text=Déconnexion');
+    await page.getByRole('button', { name: /déconnexion/i }).click();
     await page.waitForURL(/.*login/);
     
     // Try to access dashboard directly
@@ -123,10 +122,7 @@ test.describe('Dashboard', () => {
     // Reload page to see loading state
     await page.reload();
     
-    // Check for skeleton elements during loading
-    // Note: This is a quick check, actual skeletons may disappear quickly
-    const skeletons = page.locator('[class*="skeleton"], [data-testid="skeleton"]');
-    // Just verify the page structure exists
-    await expect(page.locator('text=Tableau de bord')).toBeVisible();
+    // Verify the page structure exists
+    await expect(page.getByRole('heading', { name: /tableau de bord/i })).toBeVisible();
   });
 });

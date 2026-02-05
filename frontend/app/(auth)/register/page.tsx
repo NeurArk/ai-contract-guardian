@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
+import { getApiErrorMessage } from '@/lib/errors';
 import { Shield, Loader2, AlertCircle } from 'lucide-react';
 
 const registerSchema = z.object({
@@ -64,7 +65,7 @@ export default function RegisterPage() {
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    {registerError instanceof Error ? registerError.message : 'Erreur lors de l\'inscription'}
+                    {getApiErrorMessage(registerError, "Erreur lors de l'inscription")}
                   </AlertDescription>
                 </Alert>
               )}

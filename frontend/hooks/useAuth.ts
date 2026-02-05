@@ -19,6 +19,10 @@ export function useAuth() {
       await storeLogin(data.access_token);
       router.push('/dashboard');
     },
+    // Ensure React Query stores the error so the UI can render loginError.
+    onError: (err) => {
+      return err;
+    },
   });
 
   const registerMutation = useMutation({

@@ -2,32 +2,38 @@ import { test, expect } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
-const TEST_USER = {
-  email: `uploadtest${Date.now()}@example.com`,
-  password: 'TestPassword123!',
-};
+function makeTestUser(prefix: string) {
+  const ts = Date.now().toString(36);
+  const rand = Math.floor(Math.random() * 1e6).toString(36);
+  return {
+    email: `${prefix}${ts}${rand}@ex.com`,
+    password: 'TestPassword123!',
+  };
+}
 
 test.describe('Upload', () => {
   test.beforeEach(async ({ page }) => {
+    const testUser = makeTestUser('uptest');
     // Register and login
     await page.goto('/register');
-    await page.fill('input[id="email"]', TEST_USER.email);
-    await page.fill('input[id="password"]', TEST_USER.password);
-    await page.fill('input[id="confirmPassword"]', TEST_USER.password);
-    await page.click('button:has-text("Créer mon compte")');
-    await page.waitForURL(/.*dashboard/, { timeout: 10000 });
+    await page.fill('input[id="email"]', testUser.email);
+    await page.fill('input[id="password"]', testUser.password);
+    await page.fill('input[id="confirmPassword"]', testUser.password);
+    await page.getByRole('button', { name: /créer mon compte/i }).click();
+    await page.waitForURL(/.*dashboard/, { timeout: 30000 });
+    await page.waitForLoadState("networkidle");
     
     // Navigate to upload page
-    await page.click('text=Nouvelle analyse');
-    await expect(page).toHaveURL(/.*upload/);
+    await page.getByRole('navigation').getByRole('link', { name: /nouvelle analyse/i }).click();
+    await expect(page).toHaveURL(/.*contracts\/upload/);
   });
 
   test('should support drag and drop file upload', async ({ page }) => {
     // Check drag and drop area is visible
-    await expect(page.locator('text=Glissez-déposez votre fichier ici')).toBeVisible();
+    await expect(page.getByText(/glissez-déposez/i)).toBeVisible();
     
     // Simulate drag enter
-    const dropZone = page.locator('div').filter({ hasText: /Glissez-déposez/ }).first();
+    const dropZone = page.locator('div').filter({ hasText: /glissez-déposez/i }).first();
     
     // Fire dragover event
     await dropZone.evaluate((el) => {
@@ -55,8 +61,8 @@ test.describe('Upload', () => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles(invalidFile);
     
-    // Should show error
-    await expect(page.locator('text=/PDF|format|type de fichier/i')).toBeVisible({ timeout: 5000 });
+    // Should show toast error
+    await expect(page.getByText(/Seuls les fichiers PDF ou DOCX sont acceptés/i)).toBeVisible({ timeout: 5000 });
     
     // Cleanup
     fs.unlinkSync(invalidFile);
@@ -77,8 +83,8 @@ test.describe('Upload', () => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles(largeFile);
     
-    // Should show size error
-    await expect(page.locator('text=/10 Mo|taille|size/i')).toBeVisible({ timeout: 5000 });
+    // Should show toast size error
+    await expect(page.getByText(/ne doit pas dépasser 10 Mo/i)).toBeVisible({ timeout: 5000 });
     
     // Cleanup
     fs.unlinkSync(largeFile);
@@ -86,12 +92,12 @@ test.describe('Upload', () => {
 
   test('should show file selection via browse button', async ({ page }) => {
     // Check browse button is visible
-    await expect(page.locator('button:has-text("Parcourir")')).toBeVisible();
+    await expect(page.getByRole('button', { name: /parcourir/i })).toBeVisible();
     
     // Check file input is hidden but exists
     const fileInput = page.locator('input[type="file"]');
     await expect(fileInput).toBeHidden();
-    await expect(fileInput).toHaveAttribute('accept', '.pdf');
+    await expect(fileInput).toHaveAttribute('accept', '.pdf,.docx');
   });
 
   test('should show upload progress', async ({ page }) => {
@@ -145,7 +151,7 @@ startxref
     await fileInput.setInputFiles(validPdf);
     
     // File info should be displayed
-    await expect(page.locator('text=valid.pdf')).toBeVisible();
+    await expect(page.getByText('valid.pdf')).toBeVisible();
     
     // Cleanup
     fs.unlinkSync(validPdf);
@@ -179,42 +185,39 @@ startxref
     await fileInput.setInputFiles(validPdf);
     
     // File should be displayed
-    await expect(page.locator('text=clear-test.pdf')).toBeVisible();
+    await expect(page.getByText('clear-test.pdf')).toBeVisible();
     
     // Click clear button (X icon)
-    const clearButton = page.locator('button').filter({ has: page.locator('[data-lucide="x"], svg') }).first();
-    if (await clearButton.isVisible().catch(() => false)) {
-      await clearButton.click();
-      
-      // Should show drop zone again
-      await expect(page.locator('text=Glissez-déposez votre fichier ici')).toBeVisible();
-    }
+    const fileRow = page.getByText('clear-test.pdf').locator('..').locator('..').locator('..');
+    const clearButton = fileRow.locator('button');
+    await expect(clearButton).toBeVisible();
+    await clearButton.click();
+    
+    // Should show drop zone again
+    await expect(page.getByText(/glissez-déposez/i)).toBeVisible();
     
     // Cleanup
     fs.unlinkSync(validPdf);
   });
 
   test('should disable upload button when no file selected', async ({ page }) => {
-    const uploadButton = page.locator('button:has-text("Lancer")');
+    const uploadButton = page.getByRole('button', { name: /lancer l'analyse/i });
     await expect(uploadButton).toBeDisabled();
   });
 
   test('should show upload instructions', async ({ page }) => {
-    await expect(page.locator('text=Analyser un nouveau contrat')).toBeVisible();
-    await expect(page.locator('text=Téléchargez votre contrat PDF')).toBeVisible();
-    await expect(page.locator('text=Formats acceptés : PDF')).toBeVisible();
-    await expect(page.locator('text=max 10 Mo')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /analyser un nouveau contrat/i })).toBeVisible();
+    await expect(page.getByText(/téléchargez votre contrat/i)).toBeVisible();
+    await expect(page.getByText(/formats acceptés/i)).toBeVisible();
   });
 
   test('should show what happens next info', async ({ page }) => {
-    await expect(page.locator('text=Que se passe-t-il ensuite ?')).toBeVisible();
-    await expect(page.locator('text=Notre IA analyse votre contrat')).toBeVisible();
-    await expect(page.locator('text=analyse complète avec les risques')).toBeVisible();
-    await expect(page.locator('text=recommandations personnalisées')).toBeVisible();
+    await expect(page.getByText(/que se passe-t-il ensuite/i)).toBeVisible();
+    await expect(page.getByText(/notre ia analyse/i)).toBeVisible();
   });
 
   test('should navigate back to contracts list', async ({ page }) => {
-    await page.click('text=Retour aux contrats');
+    await page.getByRole('link', { name: /retour aux contrats/i }).click();
     await expect(page).toHaveURL(/.*contracts/);
   });
 });

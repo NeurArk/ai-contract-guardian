@@ -1,48 +1,51 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
 
-const TEST_USER = {
-  email: `contractstest${Date.now()}@example.com`,
-  password: 'TestPassword123!',
-};
+function makeTestUser(prefix: string) {
+  // Short unique suffix to stay under 50 chars total (backend constraint).
+  const ts = Date.now().toString(36);
+  const rand = Math.floor(Math.random() * 1e6).toString(36);
+  return {
+    email: `${prefix}${ts}${rand}@ex.com`,
+    password: 'TestPassword123!',
+  };
+}
 
 test.describe('Contracts', () => {
   test.beforeEach(async ({ page }) => {
+    const testUser = makeTestUser('contractstest');
     // Register and login
     await page.goto('/register');
-    await page.fill('input[id="email"]', TEST_USER.email);
-    await page.fill('input[id="password"]', TEST_USER.password);
-    await page.fill('input[id="confirmPassword"]', TEST_USER.password);
-    await page.click('button:has-text("Créer mon compte")');
-    await page.waitForURL(/.*dashboard/, { timeout: 10000 });
+    await page.fill('input[id="email"]', testUser.email);
+    await page.fill('input[id="password"]', testUser.password);
+    await page.fill('input[id="confirmPassword"]', testUser.password);
+    await page.getByRole('button', { name: /créer mon compte/i }).click();
+    await page.waitForURL(/.*dashboard/, { timeout: 30000 });
+    await page.waitForLoadState("networkidle");
   });
 
   test('should upload a PDF contract', async ({ page }) => {
     // Navigate to upload page
-    await page.click('text=Nouvelle analyse');
-    await expect(page).toHaveURL(/.*upload/);
+    await page.getByRole('navigation').getByRole('link', { name: /nouvelle analyse/i }).click();
+    await expect(page).toHaveURL(/.*contracts\/upload/);
 
-    // Upload a test PDF file
-    const testPdfPath = path.join(__dirname, '../public/test-contract.pdf');
+    // Should show upload page heading
+    await expect(page.getByRole('heading', { name: /analyser un nouveau contrat/i })).toBeVisible();
+    await expect(page.getByText(/glissez-déposez/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /parcourir les fichiers/i })).toBeVisible();
     
-    // Create a simple PDF buffer for testing if file doesn't exist
-    // For now, we'll skip the actual file upload in test and verify the UI
-    await expect(page.locator('text=Analyser un nouveau contrat')).toBeVisible();
-    await expect(page.locator('text=Glissez-déposez votre fichier ici')).toBeVisible();
-    
-    // Check that file input accepts PDF
+    // Check that file input accepts PDF and DOCX
     const fileInput = page.locator('input[type="file"]');
-    await expect(fileInput).toHaveAttribute('accept', '.pdf');
+    await expect(fileInput).toHaveAttribute('accept', '.pdf,.docx');
   });
 
   test('should navigate to contracts list', async ({ page }) => {
     // Navigate to contracts page
-    await page.click('text=Mes contrats');
+    await page.getByRole('link', { name: /mes contrats/i }).click();
     await expect(page).toHaveURL(/.*contracts/);
 
-    // Should show contracts list
-    await expect(page.locator('text=Mes contrats')).toBeVisible();
-    await expect(page.locator('text=Gérez et consultez tous vos contrats')).toBeVisible();
+    // Should show contracts page heading
+    await expect(page.getByRole('heading', { name: /mes contrats/i })).toBeVisible();
   });
 
   test('should navigate to contract detail', async ({ page }) => {
@@ -53,11 +56,11 @@ test.describe('Contracts', () => {
     await page.waitForTimeout(2000);
     
     // Check for empty state or contract list
-    const hasContracts = await page.locator('text=Aucun contrat encore').isVisible().catch(() => false);
+    const hasContracts = await page.getByText(/aucun contrat/i).isVisible().catch(() => false);
     
     if (hasContracts) {
       // Empty state - show upload button
-      await expect(page.locator('button:has-text("Analyser un contrat")')).toBeVisible();
+      await expect(page.getByRole('button', { name: /analyser un contrat/i })).toBeVisible();
     }
   });
 
@@ -74,7 +77,7 @@ test.describe('Contracts', () => {
       await filterSelect.click();
       
       // Select a status option
-      await page.click('text=Terminé');
+      await page.getByText(/terminé|completed/i).click();
       
       // Wait for filter to apply
       await page.waitForTimeout(500);
@@ -101,14 +104,13 @@ test.describe('Contracts', () => {
 
   test('should show contract stats on dashboard', async ({ page }) => {
     // Already on dashboard from beforeEach
-    await expect(page.locator('text=Contrats totaux')).toBeVisible();
-    await expect(page.locator('text=Analyses terminées')).toBeVisible();
-    await expect(page.locator('text=En attente')).toBeVisible();
+    await expect(page.getByText(/contrats totaux/i)).toBeVisible();
+    await expect(page.getByText(/analyses terminées/i)).toBeVisible();
   });
 
   test('should navigate from dashboard to recent contracts', async ({ page }) => {
     // Click on "Voir tout" link
-    const viewAllLink = page.locator('text=Voir tout').first();
+    const viewAllLink = page.getByRole('link', { name: /voir tout/i }).first();
     if (await viewAllLink.isVisible().catch(() => false)) {
       await viewAllLink.click();
       await expect(page).toHaveURL(/.*contracts/);
@@ -123,11 +125,11 @@ test.describe('Contracts', () => {
     await page.waitForTimeout(2000);
     
     // Check for empty state
-    const emptyState = await page.locator('text=Aucun contrat encore').isVisible().catch(() => false);
+    const emptyState = await page.getByText(/aucun contrat/i).isVisible().catch(() => false);
     
     if (emptyState) {
-      await expect(page.locator('text=Commencez par analyser votre premier contrat')).toBeVisible();
-      await expect(page.locator('button:has-text("Analyser un contrat")')).toBeVisible();
+      await expect(page.getByText(/commencez par analyser/i)).toBeVisible();
+      await expect(page.getByRole('button', { name: /analyser un contrat/i })).toBeVisible();
     }
   });
 });

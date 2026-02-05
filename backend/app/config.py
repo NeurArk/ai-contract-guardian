@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
 
     # CORS - string séparée par des virgules
-    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8080"
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080"
 
     # Base de données
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/contract_guardian"
