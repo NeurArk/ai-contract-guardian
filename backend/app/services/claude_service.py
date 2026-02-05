@@ -11,7 +11,6 @@ import httpx
 
 from app.config import settings
 
-
 ANALYSIS_PROMPT = """Tu es un expert juridique spécialisé dans l'analyse de contrats pour les TPE/PME.
 Analyse le contrat suivant et fournis une évaluation structurée.
 
@@ -63,42 +62,40 @@ IMPORTANT:
 
 async def analyze_contract_with_claude(contract_text: str) -> dict[str, Any]:
     """Analyse un contrat avec l'API Anthropic Claude.
-    
+
     Args:
         contract_text: Texte du contrat à analyser
-        
+
     Returns:
         Les résultats de l'analyse sous forme de dictionnaire
-        
+
     Raises:
         ValueError: Si l'analyse échoue ou si la clé API n'est pas configurée
     """
     api_key = settings.ANTHROPIC_API_KEY or os.getenv("ANTHROPIC_API_KEY")
-    
+
     if not api_key:
         raise ValueError("Clé API Anthropic non configurée")
-    
+
     # Limite la taille du texte ( Claude a des limites de contexte)
     max_chars = 100000
     if len(contract_text) > max_chars:
         contract_text = contract_text[:max_chars] + "\n\n[... Contrat tronqué pour l'analyse ...]"
-    
+
     prompt = ANALYSIS_PROMPT.format(contract_text=contract_text)
-    
+
     headers = {
         "x-api-key": api_key,
         "Content-Type": "application/json",
         "anthropic-version": "2023-06-01",
     }
-    
+
     payload = {
         "model": settings.ANTHROPIC_MODEL,
         "max_tokens": 4000,
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
+        "messages": [{"role": "user", "content": prompt}],
     }
-    
+
     async with httpx.AsyncClient(timeout=120.0) as client:
         try:
             response = await client.post(
@@ -107,21 +104,21 @@ async def analyze_contract_with_claude(contract_text: str) -> dict[str, Any]:
                 json=payload,
             )
             response.raise_for_status()
-            
+
             data = response.json()
             content = data["content"][0]["text"]
-            
+
             # Extrait le JSON de la réponse
             # Cherche un bloc JSON entre accolades
             start_idx = content.find("{")
             end_idx = content.rfind("}")
-            
+
             if start_idx == -1 or end_idx == -1:
                 raise ValueError("Format de réponse invalide: JSON non trouvé")
-            
-            json_str = content[start_idx:end_idx + 1]
+
+            json_str = content[start_idx : end_idx + 1]
             result = json.loads(json_str)
-            
+
             # Normalise les résultats
             return {
                 "summary": result.get("summary", ""),
@@ -133,7 +130,7 @@ async def analyze_contract_with_claude(contract_text: str) -> dict[str, Any]:
                 "score_clarity": result.get("score_clarity", 50),
                 "missing_clauses": result.get("missing_clauses", []),
             }
-            
+
         except httpx.HTTPStatusError as e:
             raise ValueError(f"Erreur API Anthropic: {e.response.status_code} - {e.response.text}")
         except json.JSONDecodeError as e:

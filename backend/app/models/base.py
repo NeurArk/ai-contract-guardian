@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, event
+from sqlalchemy import Column, DateTime, event
 from sqlalchemy.orm import declared_attr
 from sqlmodel import Field, SQLModel
 
@@ -20,12 +20,13 @@ def utc_now() -> datetime:
 
 class BaseModel(SQLModel):
     """Modèle de base avec champs communs.
-    
+
     Tous les modèles de l'application doivent hériter de cette classe.
     """
-    
+
     class Config:
         """Configuration Pydantic."""
+
         json_encoders = {
             datetime: lambda v: v.isoformat(),
             UUID: lambda v: str(v),
@@ -34,22 +35,20 @@ class BaseModel(SQLModel):
 
 class TimestampMixin(SQLModel):
     """Mixin pour les timestamps created_at et updated_at."""
-    
+
     created_at: datetime = Field(
         default_factory=utc_now,
         sa_type=DateTime(timezone=True),
-        nullable=False,
     )
     updated_at: datetime = Field(
         default_factory=utc_now,
         sa_type=DateTime(timezone=True),
-        nullable=False,
     )
 
 
 class UUIDMixin(SQLModel):
     """Mixin pour l'ID UUID."""
-    
+
     id: UUID = Field(
         default_factory=uuid4,
         primary_key=True,
@@ -60,13 +59,13 @@ class UUIDMixin(SQLModel):
 
 class BaseTableModel(BaseModel, UUIDMixin, TimestampMixin):
     """Modèle de base pour les tables de la base de données.
-    
+
     Combine les mixins UUID et Timestamp pour créer
     un modèle de table complet.
     """
-    
+
     __abstract__ = True
-    
+
     @declared_attr.directive
     def __tablename__(cls) -> str:
         """Génère automatiquement le nom de la table."""

@@ -13,14 +13,14 @@ from typing import Final
 # DISCLAIMER LÉGAL OBLIGATOIRE
 # ============================================================================
 
-LEGAL_DISCLAIMER: Final[str] = """
-⚠️ AVERTISSEMENT LÉGAL: Ce rapport est généré automatiquement par une intelligence 
-artificielle à titre purement indicatif et informatif. Il ne constitue pas un avis 
-juridique, ne remplace pas la consultation d'un avocat ou notaire, et ne saurait 
-engager la responsabilité de AI Contract Guardian. Les informations fournies peuvent 
-contenir des erreurs ou omissions. Nous vous recommandons vivement de faire vérifier 
-cette analyse par un professionnel du droit avant toute décision.
-""".strip()
+LEGAL_DISCLAIMER: Final[str] = (
+    "⚠️ AVERTISSEMENT LÉGAL: Ce rapport est généré automatiquement par une intelligence "
+    "artificielle à titre purement indicatif et informatif. Il ne constitue pas un avis "
+    "juridique, ne remplace pas la consultation d'un avocat ou notaire, et ne saurait "
+    "engager la responsabilité de AI Contract Guardian. Les informations fournies peuvent "
+    "contenir des erreurs ou omissions. Nous vous recommandons vivement de faire vérifier "
+    "cette analyse par un professionnel du droit avant toute décision."
+)
 
 # ============================================================================
 # PROMPT PRINCIPAL D'ANALYSE JURIDIQUE
@@ -263,68 +263,71 @@ TYPES DE CLAUSES À DÉTECTER:
 # FONCTIONS DE FORMATAGE
 # ============================================================================
 
+
 def format_legal_analysis_prompt(
     contract_text: str,
     sources: list[dict] | None = None,
-    max_contract_length: int = 80000
+    search_results: list[dict] | None = None,
+    max_contract_length: int = 80000,
 ) -> str:
     """Formate le prompt d'analyse juridique avec le contrat et les sources.
-    
+
     Args:
         contract_text: Texte complet du contrat
-        sources: Liste des sources juridiques trouvées
+        sources: Liste des sources juridiques trouvées (alias pour search_results)
+        search_results: Liste des résultats de recherche
         max_contract_length: Longueur max du contrat (troncature si nécessaire)
-        
+
     Returns:
         Prompt formaté prêt pour Claude
     """
+    # Utilise search_results si fourni, sinon sources
+    effective_sources = search_results if search_results is not None else sources
+
     # Tronque si nécessaire
     if len(contract_text) > max_contract_length:
         contract_text = contract_text[:max_contract_length] + (
             "\n\n[... CONTRAT TRONQUÉ POUR L'ANALYSE - "
             f"{len(contract_text) - max_contract_length} caractères omis ...]"
         )
-    
+
     # Formate les sources en JSON
     sources_json = "[]"
-    if sources:
+    if effective_sources:
         import json
-        sources_json = json.dumps(sources, ensure_ascii=False, indent=2)
-    
-    return LEGAL_ANALYSIS_PROMPT.format(
-        contract_text=contract_text,
-        sources_json=sources_json
-    )
+
+        sources_json = json.dumps(effective_sources, ensure_ascii=False, indent=2)
+
+    # Utilise replace au lieu de format pour éviter les problèmes avec les accolades JSON
+    return LEGAL_ANALYSIS_PROMPT.replace("{contract_text}", contract_text).replace("{sources_json}", sources_json)
 
 
-def format_verification_prompt(
-    claim: str,
-    citation: str,
-    sources: list[dict]
-) -> str:
+def format_verification_prompt(claim: str, citation: str, sources: list[dict]) -> str:
     """Formate le prompt de vérification anti-hallucination.
-    
+
     Args:
         claim: L'affirmation à vérifier
         citation: La citation juridique présumée
         sources: Sources trouvées lors de la recherche
-        
+
     Returns:
         Prompt formaté pour vérification
     """
     import json
+
     sources_json = json.dumps(sources, ensure_ascii=False, indent=2)
-    
-    return VERIFICATION_PROMPT.format(
-        claim=claim,
-        citation=citation,
-        sources=sources_json
-    )
+
+    return VERIFICATION_PROMPT.format(claim=claim, citation=citation, sources=sources_json)
 
 
 def get_disclaimer() -> str:
     """Retourne le disclaimer légal obligatoire."""
     return LEGAL_DISCLAIMER
+
+
+# Alias pour compatibilité
+format_prompt_with_context = format_legal_analysis_prompt
+LEGAL_ANALYSIS_SYSTEM_PROMPT = LEGAL_ANALYSIS_PROMPT
 
 
 # ============================================================================

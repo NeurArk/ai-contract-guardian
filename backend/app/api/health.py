@@ -10,6 +10,7 @@ router = APIRouter()
 
 class HealthResponse(BaseModel):
     """Réponse du health check."""
+
     status: str
     version: str
 
@@ -23,7 +24,7 @@ class HealthResponse(BaseModel):
 )
 async def health_check() -> HealthResponse:
     """Endpoint de health check.
-    
+
     Returns:
         Status de l'API et version
     """

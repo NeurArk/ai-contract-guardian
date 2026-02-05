@@ -24,11 +24,11 @@ security = HTTPBearer(auto_error=False)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Vérifie un mot de passe en clair contre un hash.
-    
+
     Args:
         plain_password: Mot de passe en clair
         hashed_password: Hash du mot de passe
-        
+
     Returns:
         True si le mot de passe correspond, False sinon
     """
@@ -37,10 +37,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     """Génère un hash à partir d'un mot de passe.
-    
+
     Args:
         password: Mot de passe en clair
-        
+
     Returns:
         Le hash du mot de passe
     """
@@ -49,11 +49,11 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
     """Crée un JWT access token.
-    
+
     Args:
         data: Données à encoder dans le token
         expires_delta: Durée de validité du token
-        
+
     Returns:
         Le token JWT encodé
     """
@@ -61,8 +61,10 @@ def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = 
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
+
     to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
@@ -70,10 +72,10 @@ def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = 
 
 def create_refresh_token(data: dict[str, Any]) -> str:
     """Crée un JWT refresh token.
-    
+
     Args:
         data: Données à encoder dans le token
-        
+
     Returns:
         Le token JWT encodé
     """
@@ -86,10 +88,10 @@ def create_refresh_token(data: dict[str, Any]) -> str:
 
 def decode_token(token: str) -> dict[str, Any] | None:
     """Décode un JWT token sans vérifier le type.
-    
+
     Args:
         token: Le token JWT à décoder
-        
+
     Returns:
         Les données décodées ou None si invalide
     """
@@ -102,10 +104,10 @@ def decode_token(token: str) -> dict[str, Any] | None:
 
 def verify_access_token(token: str) -> dict[str, Any] | None:
     """Vérifie et décode un JWT access token.
-    
+
     Args:
         token: Le token JWT à vérifier
-        
+
     Returns:
         Les données décodées ou None si invalide
     """
@@ -120,10 +122,10 @@ def verify_access_token(token: str) -> dict[str, Any] | None:
 
 def verify_refresh_token(token: str) -> dict[str, Any] | None:
     """Vérifie et décode un JWT refresh token.
-    
+
     Args:
         token: Le token JWT à vérifier
-        
+
     Returns:
         Les données décodées ou None si invalide
     """
@@ -140,13 +142,13 @@ async def get_current_user_id(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> UUID:
     """Dépendance FastAPI pour obtenir l'ID de l'utilisateur courant.
-    
+
     Args:
         credentials: Credentials HTTP Bearer
-        
+
     Returns:
         L'ID de l'utilisateur
-        
+
     Raises:
         HTTPException: Si le token est invalide ou manquant
     """
@@ -156,7 +158,7 @@ async def get_current_user_id(
             detail="Authentification requise",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     payload = verify_access_token(credentials.credentials)
     if not payload:
         raise HTTPException(
@@ -164,7 +166,7 @@ async def get_current_user_id(
             detail="Token invalide ou expiré",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(
@@ -172,7 +174,7 @@ async def get_current_user_id(
             detail="Token invalide",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     try:
         return UUID(user_id)
     except ValueError:

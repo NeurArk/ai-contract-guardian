@@ -32,25 +32,28 @@ router = APIRouter(prefix="/contracts", tags=["contracts"])
 
 def validate_file(file: UploadFile) -> None:
     """Valide un fichier uploadé.
-    
+
     Args:
         file: Fichier à valider
-        
+
     Raises:
         HTTPException: Si le fichier est invalide
     """
     # Vérifie l'extension
     filename = file.filename or ""
     ext = Path(filename).suffix.lower()
-    
+
     if ext not in settings.allowed_extensions_list:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Extension non autorisée. Extensions acceptées: {settings.ALLOWED_EXTENSIONS}",
         )
-    
+
     # Vérifie le type MIME
-    allowed_types = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+    allowed_types = [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ]
     if file.content_type not in allowed_types:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -65,42 +68,42 @@ async def upload_contract(
     db: AsyncSession = Depends(get_db),
 ) -> Contract:
     """Uploader un contrat pour analyse.
-    
+
     Args:
         file: Fichier à uploader
         current_user_id: ID de l'utilisateur connecté
         db: Session de base de données
-        
+
     Returns:
         Le contrat créé
     """
     # Valide le fichier
     validate_file(file)
-    
+
     # Vérifie la taille du fichier
     content = await file.read()
     file_size = len(content)
-    
+
     if file_size > settings.MAX_FILE_SIZE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Fichier trop volumineux. Taille maximale: {settings.MAX_FILE_SIZE / (1024*1024):.0f}MB",
+            detail=f"Fichier trop volumineux. Taille maximale: {settings.MAX_FILE_SIZE / (1024 * 1024):.0f}MB",
         )
-    
+
     # Crée le dossier utilisateur
     user_upload_dir = settings.upload_path / str(current_user_id)
     user_upload_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Génère un nom de fichier unique
     contract_id = UUID(os.urandom(16).hex()[:32], version=4)
     ext = Path(file.filename or "").suffix.lower()
     file_name = f"{contract_id}{ext}"
     file_path = user_upload_dir / file_name
-    
+
     # Sauvegarde le fichier
     with open(file_path, "wb") as f:
         f.write(content)
-    
+
     # Crée le contrat en base de données
     contract = Contract(
         id=contract_id,
@@ -111,11 +114,11 @@ async def upload_contract(
         file_type=file.content_type or "application/octet-stream",
         status=ContractStatus.PENDING,
     )
-    
+
     db.add(contract)
     await db.commit()
     await db.refresh(contract)
-    
+
     # Crée l'analyse associée
     analysis = Analysis(
         contract_id=contract.id,
@@ -123,16 +126,18 @@ async def upload_contract(
     )
     db.add(analysis)
     await db.commit()
-    
+
     # Déclenche l'analyse asynchrone via Celery si disponible
     try:
         from app.celery_app import celery_app
+
         if celery_app:
             from app.tasks.analysis import analyze_contract
+
             analyze_contract.delay(str(contract.id))
     except ImportError:
         pass  # Celery non configuré, l'analyse sera faite manuellement
-    
+
     return contract
 
 
@@ -142,11 +147,11 @@ async def list_contracts(
     db: AsyncSession = Depends(get_db),
 ) -> list[Contract]:
     """Lister les contrats de l'utilisateur.
-    
+
     Args:
         current_user_id: ID de l'utilisateur connecté
         db: Session de base de données
-        
+
     Returns:
         Liste des contrats
     """
@@ -166,15 +171,15 @@ async def get_contract(
     db: AsyncSession = Depends(get_db),
 ) -> Contract:
     """Récupérer un contrat par son ID.
-    
+
     Args:
         contract_id: ID du contrat
         current_user_id: ID de l'utilisateur connecté
         db: Session de base de données
-        
+
     Returns:
         Le contrat
-        
+
     Raises:
         HTTPException: Si le contrat n'est pas trouvé ou n'appartient pas à l'utilisateur
     """
@@ -185,13 +190,13 @@ async def get_contract(
         )
     )
     contract = result.scalar_one_or_none()
-    
+
     if not contract:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Contrat non trouvé",
         )
-    
+
     return contract
 
 
@@ -202,12 +207,12 @@ async def get_contract_status(
     db: AsyncSession = Depends(get_db),
 ) -> AnalysisStatusResponse:
     """Récupérer le statut de l'analyse d'un contrat.
-    
+
     Args:
         contract_id: ID du contrat
         current_user_id: ID de l'utilisateur connecté
         db: Session de base de données
-        
+
     Returns:
         Le statut de l'analyse
     """
@@ -219,25 +224,23 @@ async def get_contract_status(
         )
     )
     contract = result.scalar_one_or_none()
-    
+
     if not contract:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Contrat non trouvé",
         )
-    
+
     # Récupère l'analyse
-    result = await db.execute(
-        select(Analysis).where(Analysis.contract_id == contract_id)
-    )
+    result = await db.execute(select(Analysis).where(Analysis.contract_id == contract_id))
     analysis = result.scalar_one_or_none()
-    
+
     if not analysis:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Analyse non trouvée",
         )
-    
+
     return AnalysisStatusResponse(
         contract_id=contract_id,
         analysis_id=analysis.id,
@@ -257,12 +260,12 @@ async def get_contract_analysis(
     db: AsyncSession = Depends(get_db),
 ) -> Analysis:
     """Récupérer les résultats de l'analyse d'un contrat.
-    
+
     Args:
         contract_id: ID du contrat
         current_user_id: ID de l'utilisateur connecté
         db: Session de base de données
-        
+
     Returns:
         Les résultats de l'analyse
     """
@@ -274,29 +277,27 @@ async def get_contract_analysis(
         )
     )
     contract = result.scalar_one_or_none()
-    
+
     if not contract:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Contrat non trouvé",
         )
-    
+
     # Récupère l'analyse
-    result = await db.execute(
-        select(Analysis).where(Analysis.contract_id == contract_id)
-    )
+    result = await db.execute(select(Analysis).where(Analysis.contract_id == contract_id))
     analysis = result.scalar_one_or_none()
-    
+
     if not analysis:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Analyse non trouvée",
         )
-    
+
     if analysis.status != AnalysisStatus.COMPLETED:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Analyse non terminée. Statut actuel: {analysis.status}",
         )
-    
+
     return analysis

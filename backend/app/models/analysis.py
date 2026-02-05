@@ -9,23 +9,29 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, JSON, Text, Enum as SAEnum, Float
-from sqlmodel import Field, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.base import BaseTableModel
+
+# Import pour les relations type hints
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.contract import Contract
 
 
 class AnalysisStatus(str, Enum):
     """Statuts possibles d'une analyse."""
-    
-    PENDING = "pending"           # En attente
-    PROCESSING = "processing"     # En cours
-    COMPLETED = "completed"       # Terminée
-    FAILED = "failed"             # Échec
+
+    PENDING = "pending"  # En attente
+    PROCESSING = "processing"  # En cours
+    COMPLETED = "completed"  # Terminée
+    FAILED = "failed"  # Échec
 
 
 class Analysis(BaseTableModel, table=True):
     """Modèle d'une analyse de contrat.
-    
+
     Attributes:
         id: UUID unique de l'analyse
         contract_id: ID du contrat analysé
@@ -37,9 +43,9 @@ class Analysis(BaseTableModel, table=True):
         created_at: Date de création
         updated_at: Date de dernière mise à jour
     """
-    
+
     __tablename__ = "analyses"
-    
+
     contract_id: UUID = Field(
         sa_column=Column(
             ForeignKey("contracts.id", ondelete="CASCADE"),
@@ -53,32 +59,20 @@ class Analysis(BaseTableModel, table=True):
             SAEnum(AnalysisStatus),
             default=AnalysisStatus.PENDING,
             nullable=False,
-        )
+        ),
     )
-    results: dict[str, Any] | None = Field(
-        default=None,
-        sa_column=Column(JSON, nullable=True)
-    )
-    score_equity: int | None = Field(
-        default=None,
-        sa_column=Column(Integer, nullable=True)
-    )
-    score_clarity: int | None = Field(
-        default=None,
-        sa_column=Column(Integer, nullable=True)
-    )
-    error_message: str | None = Field(
-        default=None,
-        sa_column=Column(Text, nullable=True)
-    )
-    
+    results: dict[str, Any] | None = Field(default=None, sa_column=Column(JSON, nullable=True))
+    score_equity: int | None = Field(default=None, sa_column=Column(Integer, nullable=True))
+    score_clarity: int | None = Field(default=None, sa_column=Column(Integer, nullable=True))
+    error_message: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
+
     # Relations
-    contract: Contract = Relationship(back_populates="analyses")
+    contract: "Contract" = Relationship(back_populates="analyses")
 
 
 class AnalysisResponse(SQLModel):
     """Schéma pour la réponse analyse."""
-    
+
     id: UUID
     contract_id: UUID
     status: AnalysisStatus
@@ -88,14 +82,14 @@ class AnalysisResponse(SQLModel):
     error_message: str | None
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
 
 
 class AnalysisStatusResponse(SQLModel):
     """Schéma pour le statut de l'analyse."""
-    
+
     contract_id: UUID
     analysis_id: UUID
     status: AnalysisStatus
@@ -104,6 +98,6 @@ class AnalysisStatusResponse(SQLModel):
     error_message: str | None
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True

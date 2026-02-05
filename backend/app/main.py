@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI):
     # Startup
     redis_client = await get_redis_client()
     app.state.redis = redis_client
-    
+
     # Setup security middleware with Redis for rate limiting
     setup_security_middleware(
         app,
@@ -24,9 +24,9 @@ async def lifespan(app: FastAPI):
         enable_gzip=True,
         allow_iframes=False,
     )
-    
+
     yield
-    
+
     # Shutdown
     if redis_client:
         await redis_client.close()
@@ -64,4 +64,5 @@ async def startup_event():
     # Crée les tables si elles n'existent pas (dev seulement)
     # En production, utiliser Alembic
     from app.db.session import init_db
+
     await init_db()

@@ -29,7 +29,7 @@
 **Endpoint:** `https://api.search.brave.com/res/v1/web/search`  
 **Coût estimé tests:** Gratuit (2000 requêtes/mois)
 
-**Format:** `BSAMv1lKwbG3ZHU1rh9yG6R_2fy1opH`
+**Format:** `BSAMv1...`
 
 **Paramètres utilisés:**
 - `country=FR`
@@ -99,7 +99,7 @@ git log --all --source --remotes --grep="BRAVE"
 
 # Vérifier pas dans fichiers
 grep -r "sk-ant" . --exclude-dir=.git || echo "OK"
-grep -r "BSAMv1l" . --exclude-dir=.git || echo "OK"
+grep -r "BSAMv1" . --exclude-dir=.git || echo "OK"
 ```
 
 ---
@@ -145,7 +145,7 @@ Pour les tests de demain (5 fév), j'aurai besoin des clés API suivantes :
    → Coût estimé: ~0.50€ pour 5 tests
 
 2. **BRAVE_API_KEY** (Recherche web Légifrance)
-   → Format: BSAMv1l...
+   → Format: BSAMv1...
    → Gratuit (2000 req/mois)
 
 Les clés seront :

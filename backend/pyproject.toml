@@ -1,74 +1,16 @@
-[project]
-name = "ai-contract-guardian"
-version = "0.2.0"
-description = "API d'analyse contractuelle par IA pour TPE/PME"
-readme = "README.md"
-requires-python = ">=3.12"
-authors = [
-    { name = "NeurArk", email = "contact@neurark.io" },
-]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "Framework :: FastAPI",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-]
+[tool.black]
+line-length = 100
+target-version = ['py312']
+exclude = '''
+/(
+    .venv
+  | venv
+  | alembic
+  | migrations
+)/
+'''
 
-dependencies = [
-    "fastapi==0.115.8",
-    "uvicorn[standard]==0.34.0",
-    "pydantic==2.10.6",
-    "pydantic-settings==2.7.1",
-    "python-dotenv==1.0.1",
-    "sqlmodel==0.0.22",
-    "asyncpg==0.30.0",
-    "redis==5.2.1",
-    "celery==5.4.0",
-    "python-jose[cryptography]==3.4.0",
-    "passlib[bcrypt]==1.7.4",
-    "python-multipart==0.0.20",
-    "httpx==0.28.1",
-    "structlog==25.1.0",
-    "pdfplumber==0.11.5",
-    "python-docx==1.1.2",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest==8.3.4",
-    "pytest-asyncio==0.25.3",
-    "pytest-cov==6.0.0",
-    "aiosqlite==0.20.0",
-    "alembic==1.14.1",
-]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["app"]
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-addopts = "-v --tb=short --strict-markers"
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-]
-
-[tool.coverage.run]
-source = ["app"]
-omit = ["*/tests/*", "*/test_*"]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if __name__ == .__main__.:",
-]
+[tool.isort]
+profile = "black"
+line_length = 100
+skip = ["alembic", "migrations"]
