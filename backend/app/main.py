@@ -17,6 +17,11 @@ from app.db.session import get_redis_client
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Application lifespan handler."""
     # Startup
+    from app.db.session import init_db
+
+    # Ensure DB tables exist (MVP/dev). In production we should use Alembic migrations.
+    await init_db()
+
     redis_client = await get_redis_client()
     app.state.redis = redis_client
 
