@@ -8,7 +8,12 @@ import {
   RegisterCredentials,
 } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+// Default: use same-origin requests so Next.js can proxy via next.config.ts rewrites (/api/* -> backend).
+// This is crucial for LAN testing: the browser talks to the frontend (port 3000),
+// and the frontend proxies to the backend (port 8000) without CORS issues.
+//
+// Optional override: set NEXT_PUBLIC_API_URL to call the backend directly.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
