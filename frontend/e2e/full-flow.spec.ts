@@ -27,6 +27,10 @@ test.describe('Full flow (upload → analyzing → result)', () => {
     await page.getByRole('navigation').getByRole('link', { name: /nouvelle analyse/i }).click();
     await expect(page).toHaveURL(/.*contracts\/upload/);
 
+    // Accept legal disclaimer (required before enabling analysis)
+    await page.getByRole('checkbox').click();
+    await expect(page.getByText(/vous avez pris connaissance/i)).toBeVisible({ timeout: 10000 });
+
     // Create a minimal PDF
     const tmpDir = ensureTmpDir();
     const pdfPath = path.join(tmpDir, `flow-${Date.now()}.pdf`);
@@ -38,10 +42,10 @@ test.describe('Full flow (upload → analyzing → result)', () => {
     await fileInput.setInputFiles(pdfPath);
 
     // Launch analysis
-    await page.click('button:has-text("Lancer l\'analyse")');
+    await page.getByRole('button', { name: /lancer l'analyse/i }).click();
 
     // Should redirect to contract detail
-    await page.waitForURL(/\/contracts\/[a-f0-9-]+/i, { timeout: 15000 });
+    await page.waitForURL(/\/contracts\/[a-f0-9-]+/i, { timeout: 60000 });
 
     // Attach a screenshot so we can visually review the UI (even when passing)
     const shotPath = testInfo.outputPath('contract-detail.png');

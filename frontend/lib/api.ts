@@ -77,6 +77,18 @@ export const authApi = {
   },
 };
 
+// Users API (RGPD)
+export const usersApi = {
+  exportMe: async (): Promise<unknown> => {
+    const response = await apiClient.get('/api/v1/users/me/export');
+    return response.data;
+  },
+
+  deleteMe: async (): Promise<void> => {
+    await apiClient.delete('/api/v1/users/me');
+  },
+};
+
 // Contracts API
 export const contractsApi = {
   getContracts: async (skip = 0, limit = 100): Promise<Contract[]> => {

@@ -36,13 +36,8 @@ TestingSessionLocal = async_sessionmaker(
     autoflush=False,
 )
 
-
-@pytest.fixture(scope="session")
-def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-    """Create an instance of the default event loop for the test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+# NOTE: Do not override pytest-asyncio's built-in event_loop fixture.
+# Overriding it can cause loop/source inspection issues in recent pytest-asyncio.
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)

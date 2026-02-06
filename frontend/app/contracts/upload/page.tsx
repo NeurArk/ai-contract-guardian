@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useUpload } from '@/hooks/useUpload';
 import { Upload, File, X, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { LegalDisclaimerWithConsent } from '@/components/analysis/LegalDisclaimer';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = [
@@ -36,6 +37,7 @@ function UploadContent() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [hasLegalConsent, setHasLegalConsent] = useState(false);
   const { upload, progress, isUploading, error, reset } = useUpload();
 
   const validateFile = useCallback((file: File): string | null => {
@@ -116,9 +118,12 @@ function UploadContent() {
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Analyser un nouveau contrat</h1>
         <p className="text-slate-600 mt-1">
-          Téléchargez votre contrat PDF ou DOCX pour une analyse complète par notre IA
+          Téléchargez votre contrat PDF ou DOCX pour une analyse IA (à titre indicatif)
         </p>
       </div>
+
+      {/* Legal disclaimer + consent (required) */}
+      <LegalDisclaimerWithConsent onAccept={() => setHasLegalConsent(true)} />
 
       {/* Upload Area */}
       <Card>
@@ -214,7 +219,7 @@ function UploadContent() {
 
           <Button
             onClick={handleUpload}
-            disabled={!file || isUploading}
+            disabled={!file || isUploading || !hasLegalConsent}
             className="w-full"
           >
             {isUploading ? (
@@ -244,7 +249,7 @@ function UploadContent() {
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              Des recommandations personnalisées vous sont proposées
+              Des points d’attention et risques potentiels sont mis en évidence (à valider avec un professionnel)
             </li>
           </ul>
         </CardContent>

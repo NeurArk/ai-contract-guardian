@@ -19,6 +19,7 @@ const navItems = [
   { href: '/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
   { href: '/contracts', label: 'Mes contrats', icon: FileText },
   { href: '/contracts/upload', label: 'Nouvelle analyse', icon: Upload },
+  { href: '/account', label: 'Mon compte', icon: User },
 ];
 
 export function Navbar() {

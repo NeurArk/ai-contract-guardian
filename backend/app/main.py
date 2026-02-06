@@ -7,6 +7,7 @@ from app.api.health import router as health_router
 from app.api.auth import router as auth_router
 from app.api.contracts import router as contracts_router
 from app.api.analysis_v2 import router as analysis_v2_router
+from app.api.users import router as users_router
 from app.config import settings
 from app.core.security_middleware import setup_security_middleware
 from app.db.session import get_redis_client
@@ -50,6 +51,7 @@ app.include_router(health_router, tags=["health"])
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(contracts_router, prefix="/api/v1")
 app.include_router(analysis_v2_router, prefix="/api/v1")
+app.include_router(users_router, prefix="/api/v1")
 
 
 @app.get("/")

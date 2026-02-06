@@ -11,6 +11,19 @@ function makeTestUser(prefix: string) {
   };
 }
 
+function ensureTmpDir() {
+  const tmpDir = '/tmp/playwright-test';
+  if (!fs.existsSync(tmpDir)) {
+    fs.mkdirSync(tmpDir, { recursive: true });
+  }
+  return tmpDir;
+}
+
+function writeMinimalPdf(outPath: string) {
+  const pdfContent = `%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\n0000000101 00000 n\ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n156\n%%EOF`;
+  fs.writeFileSync(outPath, pdfContent);
+}
+
 test.describe('Upload', () => {
   test.beforeEach(async ({ page }) => {
     const testUser = makeTestUser('uptest');
@@ -203,6 +216,27 @@ startxref
   test('should disable upload button when no file selected', async ({ page }) => {
     const uploadButton = page.getByRole('button', { name: /lancer l'analyse/i });
     await expect(uploadButton).toBeDisabled();
+  });
+
+  test('should require legal consent before enabling analysis', async ({ page }) => {
+    const tmpDir = ensureTmpDir();
+    const pdfPath = path.join(tmpDir, `consent-${Date.now()}.pdf`);
+    writeMinimalPdf(pdfPath);
+
+    // Select a valid file first
+    await page.locator('input[type="file"]').setInputFiles(pdfPath);
+    await expect(page.getByText(/consent-.*\.pdf/)).toBeVisible();
+
+    const uploadButton = page.getByRole('button', { name: /lancer l'analyse/i });
+    await expect(uploadButton).toBeDisabled();
+
+    // Accept legal disclaimer
+    await page.getByRole('checkbox').click();
+    await expect(page.getByText(/vous avez pris connaissance/i)).toBeVisible({ timeout: 10000 });
+
+    await expect(uploadButton).toBeEnabled();
+
+    fs.unlinkSync(pdfPath);
   });
 
   test('should show upload instructions', async ({ page }) => {
