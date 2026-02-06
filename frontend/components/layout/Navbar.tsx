@@ -22,6 +22,11 @@ const navItems = [
   { href: '/account', label: 'Mon compte', icon: User },
 ];
 
+const legalItems = [
+  { href: '/legal/cgu', label: 'CGU', icon: FileText },
+  { href: '/legal/privacy', label: 'Confidentialité', icon: Shield },
+];
+
 export function Navbar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
@@ -59,10 +64,36 @@ export function Navbar() {
           {/* User Menu */}
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-4">
-              <span className="text-sm text-slate-600">{user?.email}</span>
-              <Button variant="ghost" size="icon" onClick={logout} aria-label="Déconnexion">
-                <LogOut className="h-5 w-5" />
-              </Button>
+              <div className="flex items-center gap-3 text-sm">
+                {legalItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`transition-colors ${
+                      pathname.startsWith(item.href)
+                        ? 'text-slate-900'
+                        : 'text-slate-500 hover:text-slate-900'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+
+              {user?.email ? (
+                <>
+                  <span className="text-sm text-slate-600">{user.email}</span>
+                  <Button variant="ghost" size="icon" onClick={logout} aria-label="Déconnexion">
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </>
+              ) : (
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">
+                    Connexion
+                  </Button>
+                </Link>
+              )}
             </div>
 
             {/* Mobile Menu */}
@@ -76,7 +107,9 @@ export function Navbar() {
                 <div className="flex flex-col gap-6 mt-8">
                   <div className="flex items-center gap-2 px-2">
                     <User className="h-5 w-5 text-slate-400" />
-                    <span className="text-sm text-slate-600 truncate">{user?.email}</span>
+                    <span className="text-sm text-slate-600 truncate">
+                      {user?.email ?? 'Non connecté'}
+                    </span>
                   </div>
 
                   <nav className="flex flex-col gap-2">
@@ -93,10 +126,35 @@ export function Navbar() {
                     ))}
                   </nav>
 
-                  <Button variant="outline" onClick={logout} className="w-full">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Déconnexion
-                  </Button>
+                  <div className="pt-4 border-t">
+                    <p className="px-2 text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Légal</p>
+                    <div className="flex flex-col gap-2">
+                      {legalItems.map((item) => (
+                        <Link key={item.href} href={item.href}>
+                          <Button
+                            variant={pathname.startsWith(item.href) ? 'default' : 'ghost'}
+                            className="w-full justify-start"
+                          >
+                            <item.icon className="h-4 w-4 mr-2" />
+                            {item.label}
+                          </Button>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+
+                  {user?.email ? (
+                    <Button variant="outline" onClick={logout} className="w-full">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Déconnexion
+                    </Button>
+                  ) : (
+                    <Link href="/login">
+                      <Button variant="outline" className="w-full">
+                        Connexion
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>

@@ -115,6 +115,15 @@ export default function LandingPage() {
       <footer className="py-8 border-t bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-slate-500">
           <p>© 2025 AI Contract Guardian. Tous droits réservés.</p>
+          <div className="mt-2 flex items-center justify-center gap-4 text-sm">
+            <Link className="underline hover:text-slate-700" href="/legal/cgu">
+              CGU
+            </Link>
+            <span className="text-slate-300">•</span>
+            <Link className="underline hover:text-slate-700" href="/legal/privacy">
+              Confidentialité
+            </Link>
+          </div>
         </div>
       </footer>
     </div>
