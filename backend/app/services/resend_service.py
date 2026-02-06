@@ -28,8 +28,12 @@ WELCOME_TEXT = (
 
 
 def resend_enabled() -> bool:
-    """Vérifie si l'envoi Resend est activé via env vars."""
-    return bool(settings.RESEND_API_KEY and settings.RESEND_FROM)
+    """Vérifie si l'envoi Resend est activé.
+
+    Par défaut, l'envoi est désactivé pour éviter d'épuiser les quotas en dev/tests.
+    Il faut explicitement `RESEND_ENABLED=true` + clés configurées.
+    """
+    return bool(settings.RESEND_ENABLED and settings.RESEND_API_KEY and settings.RESEND_FROM)
 
 
 async def send_welcome_email(

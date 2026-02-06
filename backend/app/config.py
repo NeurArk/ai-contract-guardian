@@ -48,8 +48,13 @@ class Settings(BaseSettings):
     ANTHROPIC_MODEL: str = "claude-sonnet-4-5-20250929"
 
     # Email (Resend) - optionnel
+    # Safety: require explicit enable flag to avoid burning quotas in dev/tests.
+    RESEND_ENABLED: bool = False
     RESEND_API_KEY: str | None = None
     RESEND_FROM: str | None = None
+
+    # External LLM calls (Anthropic) can be expensive: keep disabled by default.
+    LLM_REAL_CALLS_ENABLED: bool = False
 
     # Stockage fichiers
     UPLOAD_DIR: str = "/tmp/uploads"

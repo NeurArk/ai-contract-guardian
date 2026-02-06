@@ -118,8 +118,9 @@ async def _analyze_contract_async(task: Task, contract_id: str) -> dict[str, Any
             try:
                 results = await analyze_contract_with_claude(contract_text)
             except Exception as e:
-                # Si pas de clé API, on simule une analyse pour les tests
-                if "non configurée" in str(e):
+                # Si pas de clé API (ou appels externes désactivés), on simule une analyse pour les tests
+                msg = str(e)
+                if "non configurée" in msg or "désactiv" in msg:
                     results = _generate_mock_analysis(contract_text)
                 else:
                     raise

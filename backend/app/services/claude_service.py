@@ -72,6 +72,11 @@ async def analyze_contract_with_claude(contract_text: str) -> dict[str, Any]:
     Raises:
         ValueError: Si l'analyse échoue ou si la clé API n'est pas configurée
     """
+    # Cost guard: disable real external LLM calls by default.
+    # Enable explicitly with `LLM_REAL_CALLS_ENABLED=true`.
+    if not settings.LLM_REAL_CALLS_ENABLED:
+        raise ValueError("Clé API Anthropic non configurée")
+
     api_key = settings.ANTHROPIC_API_KEY or os.getenv("ANTHROPIC_API_KEY")
 
     if not api_key:
