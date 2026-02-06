@@ -16,10 +16,25 @@ from sqlmodel import SQLModel
 # (we override any container-provided DATABASE_URL to keep tests deterministic)
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./test.db"
 
+# Disable rate limiting in tests to avoid cross-test coupling
+os.environ["AUTH_RATE_LIMIT_ENABLED"] = "false"
+
 from app.config import settings
-from app.db.session import get_db
+from app.db.session import get_db, get_redis_client
 from app.main import app
 from app.core.rate_limit import reset_in_memory_rate_limits
+
+
+async def reset_redis_rate_limits() -> None:
+    """Clear rate limit keys in Redis for tests."""
+    try:
+        redis = await get_redis_client()
+        # Delete all auth rate limit keys
+        keys = await redis.keys("rl:auth:*")
+        if keys:
+            await redis.delete(*keys)
+    except Exception:
+        pass  # Redis might not be available
 
 # Use a local SQLite database for testing
 TEST_DATABASE_URL = settings.DATABASE_URL
@@ -82,6 +97,7 @@ def client(db_session: AsyncSession) -> Generator[TestClient, None, None]:
     app.dependency_overrides[get_db] = override_get_db
 
     reset_in_memory_rate_limits()
+    asyncio.get_event_loop().run_until_complete(reset_redis_rate_limits())
 
     # Use a unique IP per test to avoid Redis-backed rate-limit cross-test coupling.
     ip = f"127.0.0.{random.randint(1, 254)}"

@@ -24,6 +24,9 @@ export default function PrivacyPage() {
               besoins des TPE/PME.
             </p>
             <p className="text-sm text-slate-500">
+              Service réservé aux professionnels (B2B).
+            </p>
+            <p className="text-sm text-slate-500">
               Contact :{' '}
               <a className="underline hover:text-slate-700" href="mailto:contact@neurark.com">
                 contact@neurark.com

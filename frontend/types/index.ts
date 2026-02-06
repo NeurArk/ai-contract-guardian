@@ -57,6 +57,8 @@ export interface LoginCredentials {
 export interface RegisterCredentials {
   email: string;
   password: string;
+  // Guardrail B2B-only: must be true to register.
+  is_professional: boolean;
 }
 
 export interface ApiError {

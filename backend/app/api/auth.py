@@ -4,12 +4,15 @@ Ce module définit les endpoints pour l'authentification.
 """
 
 from datetime import timedelta
+import hashlib
+import logging
 import time
 from typing import cast
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 
+from app.core.metrics import increment_daily
 from app.core.rate_limit import enforce_auth_rate_limit
 from sqlalchemy import select
 from sqlmodel import col
@@ -27,7 +30,23 @@ from app.db.session import get_db, get_redis_client
 from app.models import User, UserCreate, UserLogin, UserResponse, TokenRefresh
 from app.services.resend_service import resend_enabled, send_welcome_email
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _email_hash(email: str | None) -> str | None:
+    if not email:
+        return None
+    normalized = email.lower().strip().encode("utf-8")
+    return hashlib.sha256(normalized).hexdigest()[:12]
+
+
+def _get_client_ip(request: Request) -> str:
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -53,11 +72,24 @@ async def register(
     """
     await enforce_auth_rate_limit(request, user_data.email, action="register")
 
+    # Guardrail: B2B-only
+    if not getattr(user_data, "is_professional", False):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ce service est réservé aux professionnels.",
+        )
+
     # Vérifie si l'email existe déjà
     result = await db.execute(select(User).where(col(User.email) == user_data.email))
     existing_user = result.scalar_one_or_none()
 
     if existing_user:
+        email_hash = _email_hash(user_data.email)
+        logger.warning(
+            "Register duplicate email",
+            extra={"email_hash": email_hash, "ip": _get_client_ip(request)},
+        )
+        await increment_daily("auth.register_duplicate")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cet email est déjà utilisé",
@@ -104,6 +136,12 @@ async def login(
     user = result.scalar_one_or_none()
 
     if not user or not verify_password(credentials.password, user.password_hash):
+        email_hash = _email_hash(credentials.email)
+        logger.warning(
+            "Login failed",
+            extra={"email_hash": email_hash, "ip": _get_client_ip(request)},
+        )
+        await increment_daily("auth.login_failed")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email ou mot de passe incorrect",

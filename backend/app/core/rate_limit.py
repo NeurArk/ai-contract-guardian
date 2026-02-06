@@ -8,13 +8,18 @@ process-local and should not be relied upon in production.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import logging
 import time
 from typing import Iterable
 
 from fastapi import HTTPException, Request, status
 
 from app.config import settings
+from app.core.metrics import increment_daily
 from app.db.session import get_redis_client
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -36,6 +41,13 @@ def _get_client_ip(request: Request) -> str:
     if forwarded:
         return forwarded.split(",")[0].strip()
     return request.client.host if request.client else "unknown"
+
+
+def _email_hash(email: str | None) -> str | None:
+    if not email:
+        return None
+    normalized = email.lower().strip().encode("utf-8")
+    return hashlib.sha256(normalized).hexdigest()[:12]
 
 
 def _in_memory_check_and_inc(key: str, limit: int, window_seconds: int) -> tuple[bool, int]:
@@ -149,6 +161,20 @@ async def enforce_auth_rate_limit(
         allowed, retry = await _check_limits_for_key(key_base, limits)
         retry_after = max(retry_after, retry)
         if not allowed:
+            email_fingerprint = _email_hash(email)
+            logger.warning(
+                "Auth rate limit exceeded",
+                extra={
+                    "action": action,
+                    "email_hash": email_fingerprint,
+                    "ip": client_ip,
+                },
+            )
+            if action == "login":
+                await increment_daily("auth.login_rate_limited")
+            elif action == "register":
+                await increment_daily("auth.register_rate_limited")
+
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail=f"Trop de tentatives. Réessayez dans {retry_after} secondes.",

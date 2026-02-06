@@ -36,6 +36,8 @@ class UserCreate(SQLModel):
 
     email: str
     password: str
+    # Guardrail B2B-only: user must confirm they are a professional.
+    is_professional: bool = False
 
 
 class UserResponse(SQLModel):

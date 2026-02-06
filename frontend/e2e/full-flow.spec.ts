@@ -20,6 +20,7 @@ test.describe('Full flow (upload → analyzing → result)', () => {
     await page.fill('input[id="email"]', TEST_USER.email);
     await page.fill('input[id="password"]', TEST_USER.password);
     await page.fill('input[id="confirmPassword"]', TEST_USER.password);
+    await page.getByRole('checkbox', { name: /je suis un professionnel/i }).check();
     await page.click('button:has-text("Créer mon compte")');
     await page.waitForURL(/.*dashboard/, { timeout: 15000 });
 

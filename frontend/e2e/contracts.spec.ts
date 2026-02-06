@@ -19,6 +19,7 @@ test.describe('Contracts', () => {
     await page.fill('input[id="email"]', testUser.email);
     await page.fill('input[id="password"]', testUser.password);
     await page.fill('input[id="confirmPassword"]', testUser.password);
+    await page.getByRole('checkbox', { name: /je suis un professionnel/i }).check();
     await page.getByRole('button', { name: /créer mon compte/i }).click();
     await page.waitForURL(/.*dashboard/, { timeout: 30000 });
     await page.waitForLoadState("networkidle");

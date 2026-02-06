@@ -16,6 +16,7 @@ def auth_headers(client: TestClient) -> dict[str, str]:
     user_data = {
         "email": "contracttest@example.com",
         "password": "TestPassword123!",
+        "is_professional": True,
     }
     
     # Register

@@ -10,11 +10,12 @@ from app.models import User
 
 
 @pytest.fixture
-def user_data() -> dict[str, str]:
+def user_data() -> dict[str, str | bool]:
     """Sample user data."""
     return {
         "email": "test@example.com",
         "password": "TestPassword123!",
+        "is_professional": True,
     }
 
 
@@ -25,7 +26,7 @@ class TestAuthEndpoints:
         self,
         client: TestClient,
         db_session: AsyncSession,
-        user_data: dict[str, str],
+        user_data: dict[str, str | bool],
     ) -> None:
         """Test successful user registration."""
         response = client.post("/api/v1/auth/register", json=user_data)
@@ -37,12 +38,29 @@ class TestAuthEndpoints:
         assert "password" not in data
         assert "password_hash" not in data
         assert data["is_active"] is True
+
+    def test_register_requires_professional(
+        self,
+        client: TestClient,
+        db_session: AsyncSession,
+    ) -> None:
+        """Test registration requires professional confirmation."""
+        payload = {
+            "email": "protest@example.com",
+            "password": "TestPassword123!",
+            "is_professional": False,
+        }
+
+        response = client.post("/api/v1/auth/register", json=payload)
+
+        assert response.status_code == 400
+        assert "professionnel" in response.json()["detail"].lower()
     
     def test_register_duplicate_email(
         self,
         client: TestClient,
         db_session: AsyncSession,
-        user_data: dict[str, str],
+        user_data: dict[str, str | bool],
     ) -> None:
         """Test registration with duplicate email."""
         # First registration
@@ -58,7 +76,7 @@ class TestAuthEndpoints:
         self,
         client: TestClient,
         db_session: AsyncSession,
-        user_data: dict[str, str],
+        user_data: dict[str, str | bool],
     ) -> None:
         """Test successful login."""
         # Register first
@@ -79,7 +97,7 @@ class TestAuthEndpoints:
         self,
         client: TestClient,
         db_session: AsyncSession,
-        user_data: dict[str, str],
+        user_data: dict[str, str | bool],
     ) -> None:
         """Test login with wrong password."""
         # Register first
@@ -108,7 +126,11 @@ class TestAuthEndpoints:
         assert response.status_code == 401
     
     def test_login_rate_limited(self, client: TestClient) -> None:
-        """Test rate limiting on login."""
+        """Test rate limiting on login (skipped if AUTH_RATE_LIMIT_ENABLED=false)."""
+        import os
+        if os.environ.get("AUTH_RATE_LIMIT_ENABLED", "true").lower() == "false":
+            pytest.skip("Rate limiting disabled in test environment")
+
         payload = {
             "email": "limit@example.com",
             "password": "SomePassword123!",
@@ -132,7 +154,7 @@ class TestAuthEndpoints:
         self,
         client: TestClient,
         db_session: AsyncSession,
-        user_data: dict[str, str],
+        user_data: dict[str, str | bool],
     ) -> None:
         """Test get me with authentication."""
         # Register and login

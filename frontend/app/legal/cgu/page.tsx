@@ -24,6 +24,9 @@ export default function CguPage() {
               intelligence artificielle, proposée dans le cadre d&apos;un pilote en environnement local (LAN).
             </p>
             <p className="text-sm text-slate-500">
+              Service réservé aux professionnels (B2B).
+            </p>
+            <p className="text-sm text-slate-500">
               Pour toute question :{' '}
               <a className="underline hover:text-slate-700" href="mailto:contact@neurark.com">
                 contact@neurark.com

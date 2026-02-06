@@ -26,6 +26,7 @@ test.describe('Authentication', () => {
     await page.fill('input[id="email"]', TEST_USER.email);
     await page.fill('input[id="password"]', TEST_USER.password);
     await page.fill('input[id="confirmPassword"]', TEST_USER.password);
+    await page.getByRole('checkbox', { name: /je suis un professionnel/i }).check();
 
     // Submit form
     await page.getByRole('button', { name: /créer mon compte/i }).click();
@@ -37,6 +38,20 @@ test.describe('Authentication', () => {
     await expect(page.getByRole('heading', { name: 'Tableau de bord' })).toBeVisible();
   });
 
+  test('should block registration without professional confirmation', async ({ page }) => {
+    const user = makeTestUser('nopro');
+
+    await page.goto('/register');
+    await page.fill('input[id="email"]', user.email);
+    await page.fill('input[id="password"]', user.password);
+    await page.fill('input[id="confirmPassword"]', user.password);
+
+    await page.getByRole('button', { name: /créer mon compte/i }).click();
+
+    await expect(page.getByText(/confirmer.*professionnel/i)).toBeVisible();
+    await expect(page).toHaveURL(/.*register/);
+  });
+
   test('should login with valid credentials', async ({ page }) => {
     const user = makeTestUser('login');
 
@@ -45,6 +60,7 @@ test.describe('Authentication', () => {
     await page.fill('input[id="email"]', user.email);
     await page.fill('input[id="password"]', user.password);
     await page.fill('input[id="confirmPassword"]', user.password);
+    await page.getByRole('checkbox', { name: /je suis un professionnel/i }).check();
     await page.getByRole('button', { name: /créer mon compte/i }).click();
     await page.waitForURL(/.*dashboard/, { timeout: 15000 });
     
@@ -88,6 +104,7 @@ test.describe('Authentication', () => {
     await page.fill('input[id="email"]', uniqueEmail);
     await page.fill('input[id="password"]', TEST_USER.password);
     await page.fill('input[id="confirmPassword"]', TEST_USER.password);
+    await page.getByRole('checkbox', { name: /je suis un professionnel/i }).check();
     await page.getByRole('button', { name: /créer mon compte/i }).click();
     await page.waitForURL(/.*dashboard/, { timeout: 30000 });
     await page.waitForLoadState("networkidle");
@@ -111,6 +128,7 @@ test.describe('Authentication', () => {
     await page.fill('input[id="email"]', 'a@b.c');
     await page.fill('input[id="password"]', TEST_USER.password);
     await page.fill('input[id="confirmPassword"]', TEST_USER.password);
+    await page.getByRole('checkbox', { name: /je suis un professionnel/i }).check();
     
     // Submit form
     await page.getByRole('button', { name: /créer mon compte/i }).click();
@@ -127,6 +145,7 @@ test.describe('Authentication', () => {
     await page.fill('input[id="email"]', TEST_USER.email);
     await page.fill('input[id="password"]', '123');
     await page.fill('input[id="confirmPassword"]', '123');
+    await page.getByRole('checkbox', { name: /je suis un professionnel/i }).check();
     
     // Submit form
     await page.getByRole('button', { name: /créer mon compte/i }).click();
@@ -143,6 +162,7 @@ test.describe('Authentication', () => {
     await page.fill('input[id="email"]', TEST_USER.email);
     await page.fill('input[id="password"]', TEST_USER.password);
     await page.fill('input[id="confirmPassword"]', 'DifferentPassword123!');
+    await page.getByRole('checkbox', { name: /je suis un professionnel/i }).check();
     
     // Submit form
     await page.getByRole('button', { name: /créer mon compte/i }).click();

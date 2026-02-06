@@ -17,6 +17,9 @@ const registerSchema = z.object({
   email: z.string().email('Email invalide'),
   password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères'),
   confirmPassword: z.string(),
+  isProfessional: z.boolean().refine((value) => value, {
+    message: 'Vous devez confirmer être un professionnel',
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Les mots de passe ne correspondent pas',
   path: ['confirmPassword'],
@@ -33,12 +36,16 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      isProfessional: false,
+    },
   });
 
   const onSubmit = async (data: RegisterFormData) => {
     await registerUser({
       email: data.email,
       password: data.password,
+      is_professional: data.isProfessional,
     });
   };
 
@@ -56,7 +63,7 @@ export default function RegisterPage() {
           <CardHeader>
             <CardTitle>Créer un compte</CardTitle>
             <CardDescription>
-              Commencez à analyser vos contrats gratuitement
+              Réservé aux professionnels (B2B) — France
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
@@ -106,6 +113,23 @@ export default function RegisterPage() {
                 />
                 {errors.confirmPassword && (
                   <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-start gap-2">
+                  <input
+                    id="isProfessional"
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 rounded border-slate-300"
+                    {...register('isProfessional')}
+                  />
+                  <Label htmlFor="isProfessional" className="text-sm text-slate-700 leading-5">
+                    Je suis un professionnel (service réservé aux professionnels).
+                  </Label>
+                </div>
+                {errors.isProfessional && (
+                  <p className="text-sm text-red-500">{errors.isProfessional.message}</p>
                 )}
               </div>
             </CardContent>

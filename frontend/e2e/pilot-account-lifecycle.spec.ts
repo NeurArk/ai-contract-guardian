@@ -34,6 +34,7 @@ test.describe('Pilot lifecycle (export data + delete account)', () => {
     await page.fill('input[id="email"]', user.email);
     await page.fill('input[id="password"]', user.password);
     await page.fill('input[id="confirmPassword"]', user.password);
+    await page.getByRole('checkbox', { name: /je suis un professionnel/i }).check();
     await page.getByRole('button', { name: /créer mon compte/i }).click();
     await page.waitForURL(/.*dashboard/, { timeout: 60_000 });
 

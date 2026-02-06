@@ -30,9 +30,12 @@ export default function LandingPage() {
             Analysez vos contrats en
             <span className="text-blue-600"> quelques secondes</span>
           </h1>
-          <p className="text-xl text-slate-600 mb-8 max-w-3xl mx-auto">
+          <p className="text-xl text-slate-600 mb-4 max-w-3xl mx-auto">
             Protégez votre entreprise avec notre IA spécialisée dans l&apos;analyse contractuelle.
             Détectez les risques, comprenez vos obligations, négociez mieux.
+          </p>
+          <p className="text-sm text-slate-500 mb-8">
+            Service réservé aux professionnels (B2B).
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/register">
