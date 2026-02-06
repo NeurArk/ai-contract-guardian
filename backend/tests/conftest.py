@@ -2,6 +2,7 @@
 
 import os
 import asyncio
+import random
 from collections.abc import AsyncGenerator, Generator
 
 import pytest
@@ -12,11 +13,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlmodel import SQLModel
 
 # Ensure tests use a local SQLite database before importing the app
-os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
+# (we override any container-provided DATABASE_URL to keep tests deterministic)
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///./test.db"
 
 from app.config import settings
 from app.db.session import get_db
 from app.main import app
+from app.core.rate_limit import reset_in_memory_rate_limits
 
 # Use a local SQLite database for testing
 TEST_DATABASE_URL = settings.DATABASE_URL
@@ -77,8 +80,13 @@ def client(db_session: AsyncSession) -> Generator[TestClient, None, None]:
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
-    
-    with TestClient(app) as test_client:
+
+    reset_in_memory_rate_limits()
+
+    # Use a unique IP per test to avoid Redis-backed rate-limit cross-test coupling.
+    ip = f"127.0.0.{random.randint(1, 254)}"
+
+    with TestClient(app, headers={"X-Forwarded-For": ip}) as test_client:
         yield test_client
     
     app.dependency_overrides.clear()
@@ -92,8 +100,13 @@ async def async_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, 
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
-    
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+
+    reset_in_memory_rate_limits()
+
+    # Use a unique IP per test to avoid Redis-backed rate-limit cross-test coupling.
+    ip = f"127.0.0.{random.randint(1, 254)}"
+
+    async with AsyncClient(app=app, base_url="http://test", headers={"X-Forwarded-For": ip}) as ac:
         yield ac
     
     app.dependency_overrides.clear()

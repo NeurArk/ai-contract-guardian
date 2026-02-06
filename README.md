@@ -161,6 +161,8 @@ Une fois l'application lancée :
 | `REDIS_URL` | URL Redis | `redis://redis:6379/0` |
 | `SECRET_KEY` | Clé secrète JWT | *requis* |
 | `ANTHROPIC_API_KEY` | Clé API Claude | *optionnel* |
+| `RESEND_API_KEY` | Clé API Resend (email bienvenue) | *optionnel* |
+| `RESEND_FROM` | Expéditeur Resend (email vérifié) | *optionnel* |
 | `CORS_ORIGINS` | Origines CORS autorisées | `http://localhost:3000` |
 
 ## 🗺️ Roadmap

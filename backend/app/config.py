@@ -33,9 +33,18 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     ALGORITHM: str = "HS256"
 
+    # Rate limiting (auth)
+    AUTH_RATE_LIMIT_ENABLED: bool = True
+    AUTH_RATE_LIMIT_PER_MINUTE: int = 5
+    AUTH_RATE_LIMIT_PER_HOUR: int = 20
+
     # API externes
     ANTHROPIC_API_KEY: str | None = None
     ANTHROPIC_MODEL: str = "claude-sonnet-4-5-20250929"
+
+    # Email (Resend) - optionnel
+    RESEND_API_KEY: str | None = None
+    RESEND_FROM: str | None = None
 
     # Stockage fichiers
     UPLOAD_DIR: str = "/tmp/uploads"

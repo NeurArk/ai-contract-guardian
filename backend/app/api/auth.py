@@ -8,7 +8,9 @@ import time
 from typing import cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+
+from app.core.rate_limit import enforce_auth_rate_limit
 from sqlalchemy import select
 from sqlmodel import col
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -23,6 +25,7 @@ from app.core.security import (
 )
 from app.db.session import get_db, get_redis_client
 from app.models import User, UserCreate, UserLogin, UserResponse, TokenRefresh
+from app.services.resend_service import resend_enabled, send_welcome_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -30,12 +33,16 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(
     user_data: UserCreate,
+    request: Request,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ) -> User:
     """Créer un nouveau compte utilisateur.
 
     Args:
         user_data: Données de l'utilisateur
+        request: Requête HTTP
+        background_tasks: Tâches en arrière-plan
         db: Session de base de données
 
     Returns:
@@ -44,6 +51,8 @@ async def register(
     Raises:
         HTTPException: Si l'email est déjà utilisé
     """
+    await enforce_auth_rate_limit(request, user_data.email, action="register")
+
     # Vérifie si l'email existe déjà
     result = await db.execute(select(User).where(col(User.email) == user_data.email))
     existing_user = result.scalar_one_or_none()
@@ -64,12 +73,16 @@ async def register(
     await db.commit()
     await db.refresh(new_user)
 
+    if resend_enabled():
+        background_tasks.add_task(send_welcome_email, new_user.email)
+
     return new_user
 
 
 @router.post("/login")
 async def login(
     credentials: UserLogin,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Connecter un utilisateur et retourner les tokens JWT.
@@ -84,6 +97,8 @@ async def login(
     Raises:
         HTTPException: Si les identifiants sont invalides
     """
+    await enforce_auth_rate_limit(request, credentials.email, action="login")
+
     # Recherche l'utilisateur
     result = await db.execute(select(User).where(col(User.email) == credentials.email))
     user = result.scalar_one_or_none()

@@ -107,6 +107,21 @@ class TestAuthEndpoints:
         
         assert response.status_code == 401
     
+    def test_login_rate_limited(self, client: TestClient) -> None:
+        """Test rate limiting on login."""
+        payload = {
+            "email": "limit@example.com",
+            "password": "SomePassword123!",
+        }
+
+        for _ in range(5):
+            response = client.post("/api/v1/auth/login", json=payload)
+            assert response.status_code == 401
+
+        response = client.post("/api/v1/auth/login", json=payload)
+        assert response.status_code == 429
+        assert "trop de tentatives" in response.json()["detail"].lower()
+
     def test_get_me_unauthorized(self, client: TestClient) -> None:
         """Test get me without authentication."""
         response = client.get("/api/v1/auth/me")
