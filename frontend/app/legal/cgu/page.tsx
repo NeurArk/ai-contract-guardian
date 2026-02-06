@@ -88,6 +88,12 @@ export default function CguPage() {
                 s&apos;engage à fournir des informations exactes et à préserver la confidentialité de ses identifiants.
               </p>
               <p>
+                <strong>Service réservé aux professionnels (B2B)</strong> — Le Service est exclusivement destiné à des utilisateurs professionnels, agissant dans le cadre de leur activité commerciale, industrielle, artisanale, libérale ou agricole. En utilisant le Service, vous déclarez et garantissez avoir la qualité de professionnel.
+              </p>
+              <p>
+                <strong>Exclusion des consommateurs</strong> — Le Service n&apos;est pas destiné aux consommateurs au sens du Code de la consommation. Nous ne contractons pas avec des consommateurs et nous nous réservons le droit de refuser, suspendre ou résilier l&apos;accès au Service en cas d&apos;utilisation par un consommateur (y compris en cas de doute), et/ou de demander tout justificatif raisonnable attestant de votre statut professionnel.
+              </p>
+              <p>
                 Le Service étant exploité dans un environnement local (LAN), l&apos;accès peut être limité au réseau interne
                 de l&apos;organisation.
               </p>

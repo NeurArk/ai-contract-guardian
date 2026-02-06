@@ -36,6 +36,23 @@ export default function PrivacyPage() {
 
           <Card>
             <CardHeader>
+              <CardTitle>Public visé (B2B)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-slate-700 leading-relaxed">
+              <p>
+                Le Service est <strong>réservé aux professionnels</strong>. Les traitements de données décrits dans la présente politique concernent des personnes physiques <strong>agissant pour le compte d&apos;une organisation</strong> (ex. représentants, dirigeants, salariés, prestataires).
+              </p>
+              <p>
+                Le Service <strong>n&apos;a pas vocation à être utilisé par des consommateurs</strong>. Si vous êtes un consommateur et que vous pensez avoir communiqué des données personnelles via le Service, veuillez nous contacter afin que nous puissions examiner la situation et, le cas échéant, procéder aux actions appropriées (suppression/limitation), dans les limites légales.
+              </p>
+              <p className="text-sm text-slate-500">
+                <strong>Pas de conseil juridique :</strong> les informations fournies par le Service, y compris lorsqu&apos;elles résultent de traitements automatisés, sont <strong>informatives</strong> et ne constituent pas un conseil juridique.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>1. Responsable du traitement</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-slate-700 leading-relaxed">
