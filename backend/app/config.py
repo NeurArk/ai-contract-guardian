@@ -35,8 +35,13 @@ class Settings(BaseSettings):
 
     # Rate limiting (auth)
     AUTH_RATE_LIMIT_ENABLED: bool = True
+    # Per-email limits (protect against brute force on a single account)
     AUTH_RATE_LIMIT_PER_MINUTE: int = 5
     AUTH_RATE_LIMIT_PER_HOUR: int = 20
+
+    # Per-IP limits (protect against broad abuse). Keep higher to avoid blocking many legit users behind NAT.
+    AUTH_RATE_LIMIT_IP_PER_MINUTE: int = 60
+    AUTH_RATE_LIMIT_IP_PER_HOUR: int = 300
 
     # API externes
     ANTHROPIC_API_KEY: str | None = None

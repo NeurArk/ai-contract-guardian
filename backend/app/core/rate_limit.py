@@ -126,21 +126,26 @@ async def enforce_auth_rate_limit(
     if not getattr(settings, "AUTH_RATE_LIMIT_ENABLED", True):
         return
 
-    per_minute = getattr(settings, "AUTH_RATE_LIMIT_PER_MINUTE", 5)
-    per_hour = getattr(settings, "AUTH_RATE_LIMIT_PER_HOUR", 20)
-    limits = (
-        (per_minute, 60),
-        (per_hour, 3600),
+    # Separate limits for email vs IP.
+    # Email limits are stricter (protect single account brute force).
+    # IP limits are higher (avoid blocking many users behind NAT; still blocks broad abuse).
+    email_limits = (
+        (getattr(settings, "AUTH_RATE_LIMIT_PER_MINUTE", 5), 60),
+        (getattr(settings, "AUTH_RATE_LIMIT_PER_HOUR", 20), 3600),
+    )
+    ip_limits = (
+        (getattr(settings, "AUTH_RATE_LIMIT_IP_PER_MINUTE", 60), 60),
+        (getattr(settings, "AUTH_RATE_LIMIT_IP_PER_HOUR", 300), 3600),
     )
 
-    identifiers = []
     client_ip = _get_client_ip(request)
-    identifiers.append(f"auth:{action}:ip:{client_ip}")
+
+    checks: list[tuple[str, Iterable[tuple[int, int]]]] = [(f"auth:{action}:ip:{client_ip}", ip_limits)]
     if email:
-        identifiers.append(f"auth:{action}:email:{email.lower().strip()}")
+        checks.append((f"auth:{action}:email:{email.lower().strip()}", email_limits))
 
     retry_after = 1
-    for key_base in identifiers:
+    for key_base, limits in checks:
         allowed, retry = await _check_limits_for_key(key_base, limits)
         retry_after = max(retry_after, retry)
         if not allowed:
